@@ -8,7 +8,9 @@ TPM_DIR="$HOME/.tmux/plugins/tpm"
 TPM_REPO="https://github.com/tmux-plugins/tpm.git"
 
 MANAGED_FILES=(
-  ".tmux.conf"
+  ".tmux.conf|.tmux.conf|linux"
+  ".config/wezterm/wezterm.lua|.config/wezterm/wezterm.lua|linux,windows"
+  "assets/images/seed-gundam.jpg|.config/wezterm/images/seed-gundam.jpg|linux,windows"
 )
 
 require_linux() {
@@ -93,15 +95,34 @@ link_file() {
     backup_existing_file "$target"
   fi
 
+  mkdir -p "$(dirname "$target")"
   ln -s "$source" "$target"
   echo "Linked: $target -> $source"
 }
 
-install_dotfiles() {
-  local file
+is_managed_on_platform() {
+  local platforms="$1"
+  local platform="$2"
 
-  for file in "${MANAGED_FILES[@]}"; do
-    link_file "$DOTFILES_DIR/$file" "$HOME/$file"
+  [[ ",$platforms," == *",$platform,"* ]]
+}
+
+install_dotfiles() {
+  local platform="$1"
+  local entry
+  local source
+  local target
+  local platforms
+
+  for entry in "${MANAGED_FILES[@]}"; do
+    IFS="|" read -r source target platforms <<< "$entry"
+
+    if ! is_managed_on_platform "$platforms" "$platform"; then
+      echo "Skipping $target for $platform."
+      continue
+    fi
+
+    link_file "$DOTFILES_DIR/$source" "$HOME/$target"
   done
 }
 
@@ -125,7 +146,7 @@ install_tpm() {
 
 main() {
   require_linux
-  install_dotfiles
+  install_dotfiles "linux"
   install_tpm
 
   echo "Done."
