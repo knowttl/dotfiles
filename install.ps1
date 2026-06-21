@@ -13,6 +13,26 @@ $Platform = 'windows'
 
 $ManagedFiles = @(
   [pscustomobject]@{
+    Source = '.agents/AGENTS.md'
+    Target = 'AGENTS.md'
+    Platforms = @('linux', 'windows')
+  },
+  [pscustomobject]@{
+    Source = '.agents/AGENTS.md'
+    Target = '.claude/AGENTS.md'
+    Platforms = @('linux', 'windows')
+  },
+  [pscustomobject]@{
+    Source = '.agents/AGENTS.md'
+    Target = '.codex/AGENTS.md'
+    Platforms = @('linux', 'windows')
+  },
+  [pscustomobject]@{
+    Source = 'OPINIONS.md'
+    Target = 'OPINIONS.md'
+    Platforms = @('linux', 'windows')
+  },
+  [pscustomobject]@{
     Source = '.tmux.conf'
     Target = '.tmux.conf'
     Platforms = @('linux')
@@ -142,6 +162,62 @@ function Get-SymlinkTarget {
   return $targetProperty.Value
 }
 
+function Test-ExistingLinkToSource {
+  param(
+    [Parameter(Mandatory = $true)]
+    [System.IO.FileSystemInfo]$Item,
+    [Parameter(Mandatory = $true)]
+    [string]$Source
+  )
+
+  $sourceFullPath = Resolve-FullPath $Source
+
+  if (($Item.Attributes -band [System.IO.FileAttributes]::ReparsePoint) -ne 0) {
+    $currentTarget = Get-SymlinkTarget $Item.FullName
+
+    if ($currentTarget) {
+      $currentFullTarget = Resolve-FullPath $currentTarget
+      return $currentFullTarget.Equals($sourceFullPath, [System.StringComparison]::OrdinalIgnoreCase)
+    }
+  }
+
+  if ($Item.PSObject.Properties['LinkType'] -and $Item.LinkType -eq 'HardLink' -and $Item.PSObject.Properties['Target']) {
+    foreach ($target in $Item.Target) {
+      $currentFullTarget = Resolve-FullPath $target
+
+      if ($currentFullTarget.Equals($sourceFullPath, [System.StringComparison]::OrdinalIgnoreCase)) {
+        return $true
+      }
+    }
+  }
+
+  return $false
+}
+
+function New-ManagedLink {
+  param(
+    [Parameter(Mandatory = $true)]
+    [string]$Source,
+    [Parameter(Mandatory = $true)]
+    [string]$Target
+  )
+
+  try {
+    New-Item -ItemType SymbolicLink -Path $Target -Target $Source | Out-Null
+    Write-Host "Linked: $Target -> $Source"
+    return
+  } catch {
+    $symlinkError = $_.Exception.Message
+  }
+
+  try {
+    New-Item -ItemType HardLink -Path $Target -Target $Source | Out-Null
+    Write-Host "Hard linked: $Target -> $Source"
+  } catch {
+    throw "Failed to create link: $Target -> $Source. Enable Windows Developer Mode or run PowerShell as Administrator for symlinks. Symlink error: $symlinkError Hard link error: $($_.Exception.Message)"
+  }
+}
+
 function Link-File {
   param(
     [Parameter(Mandatory = $true)]
@@ -157,17 +233,13 @@ function Link-File {
   $existingItem = Get-Item -LiteralPath $Target -Force -ErrorAction SilentlyContinue
 
   if ($existingItem) {
+    if (Test-ExistingLinkToSource $existingItem $Source) {
+      Write-Host "Already linked: $Target -> $Source"
+      return
+    }
+
     $currentTarget = Get-SymlinkTarget $Target
-
     if ($currentTarget) {
-      $currentFullTarget = Resolve-FullPath $currentTarget
-      $sourceFullPath = Resolve-FullPath $Source
-
-      if ($currentFullTarget.Equals($sourceFullPath, [System.StringComparison]::OrdinalIgnoreCase)) {
-        Write-Host "Already linked: $Target -> $Source"
-        return
-      }
-
       Write-Host "Replacing symlink: $Target -> $currentTarget"
       Remove-Item -LiteralPath $Target -Force
     } else {
@@ -180,13 +252,7 @@ function Link-File {
     New-Item -ItemType Directory -Path $targetParent -Force | Out-Null
   }
 
-  try {
-    New-Item -ItemType SymbolicLink -Path $Target -Target $Source | Out-Null
-  } catch {
-    throw "Failed to create symlink: $Target -> $Source. Enable Windows Developer Mode or run PowerShell as Administrator, then rerun this installer. $($_.Exception.Message)"
-  }
-
-  Write-Host "Linked: $Target -> $Source"
+  New-ManagedLink $Source $Target
 }
 
 function Install-Dotfiles {

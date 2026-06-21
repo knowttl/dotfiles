@@ -8,6 +8,10 @@ TPM_DIR="$HOME/.tmux/plugins/tpm"
 TPM_REPO="https://github.com/tmux-plugins/tpm.git"
 
 MANAGED_FILES=(
+  ".agents/AGENTS.md|AGENTS.md|linux,windows"
+  ".agents/AGENTS.md|.claude/AGENTS.md|linux,windows"
+  ".agents/AGENTS.md|.codex/AGENTS.md|linux,windows"
+  "OPINIONS.md|OPINIONS.md|linux,windows"
   ".tmux.conf|.tmux.conf|linux"
   ".config/wezterm/wezterm.lua|.config/wezterm/wezterm.lua|linux,windows"
   "assets/images/seed-gundam.jpg|.config/wezterm/images/seed-gundam.jpg|linux,windows"

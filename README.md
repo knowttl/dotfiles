@@ -4,6 +4,8 @@ Personal configuration files.
 
 ## Contents
 
+- `.agents/AGENTS.md` - profile-level agent instructions linked to `~/AGENTS.md`, `~/.claude/AGENTS.md`, and `~/.codex/AGENTS.md`.
+- `OPINIONS.md` - Working preference map for agents, linked to `~/OPINIONS.md`.
 - `.tmux.conf` - tmux configuration with mouse support, vim-style pane movement, split bindings, larger history, and TPM plugin declarations.
 - `.config/wezterm/wezterm.lua` - WezTerm configuration shared by Windows and Linux hosts, including the managed background image at `assets/images/seed-gundam.jpg`.
 
@@ -17,7 +19,7 @@ cd ~/dotfiles
 ./install.sh
 ```
 
-The Linux installer symlinks supported config files into the current user's home directory and installs TPM if it is not already present. It installs `.tmux.conf` and the shared WezTerm config.
+The Linux installer symlinks supported config files into the current user's home directory and installs TPM if it is not already present. It installs the profile-level agent instructions, `OPINIONS.md`, `.tmux.conf`, and the shared WezTerm config.
 
 ## Windows Install
 
@@ -27,9 +29,10 @@ From PowerShell, run:
 .\install.ps1
 ```
 
-The Windows installer symlinks Windows-supported config files into the current user's home directory. It installs the shared WezTerm config at `~/.config/wezterm/wezterm.lua` and skips Linux-only files such as `.tmux.conf`.
+The Windows installer symlinks Windows-supported config files into the current user's home directory. It installs the profile-level agent instructions, `OPINIONS.md`, the shared WezTerm config at `~/.config/wezterm/wezterm.lua`, and skips Linux-only files such as `.tmux.conf`.
 
 Windows may require Developer Mode or an elevated PowerShell session to create symlinks.
+When symlinks are unavailable, the Windows installer falls back to file hard links.
 
 ## Installer behavior
 
