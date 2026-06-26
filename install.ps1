@@ -13,26 +13,6 @@ $Platform = 'windows'
 
 $ManagedFiles = @(
   [pscustomobject]@{
-    Source = '.agents/AGENTS.md'
-    Target = 'AGENTS.md'
-    Platforms = @('linux', 'windows')
-  },
-  [pscustomobject]@{
-    Source = '.agents/AGENTS.md'
-    Target = '.claude/AGENTS.md'
-    Platforms = @('linux', 'windows')
-  },
-  [pscustomobject]@{
-    Source = '.agents/AGENTS.md'
-    Target = '.codex/AGENTS.md'
-    Platforms = @('linux', 'windows')
-  },
-  [pscustomobject]@{
-    Source = 'OPINIONS.md'
-    Target = 'OPINIONS.md'
-    Platforms = @('linux', 'windows')
-  },
-  [pscustomobject]@{
     Source = '.tmux.conf'
     Target = '.tmux.conf'
     Platforms = @('linux')
