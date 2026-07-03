@@ -10,6 +10,8 @@ TPM_REPO="https://github.com/tmux-plugins/tpm.git"
 MANAGED_FILES=(
   ".tmux.conf|.tmux.conf|linux"
   ".config/tmux/tmux-agent-status.sh|.config/tmux/tmux-agent-status.sh|linux"
+  ".config/tmux/tmux-agent-detect.sh|.config/tmux/tmux-agent-detect.sh|linux"
+  ".config/tmux/tmux-agent-statusd.sh|.config/tmux/tmux-agent-statusd.sh|linux"
   ".config/wezterm/wezterm.lua|.config/wezterm/wezterm.lua|linux,windows"
   "assets/images/seed-gundam.jpg|.config/wezterm/images/seed-gundam.jpg|linux,windows"
 )
