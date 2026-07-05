@@ -26,6 +26,8 @@ in
     fd        # fast find (telescope)
     fzf       # fuzzy finder (tmux popups)
     jq        # json on the command line
+    gh        # github cli (git credential helper, PRs)
+    openssh   # ssh client for git remotes
     lazygit
     neovim
     tmux
