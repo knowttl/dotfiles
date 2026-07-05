@@ -1,159 +1,63 @@
 #!/usr/bin/env bash
+# Single idempotent entry point for this dotfiles repo on Linux.
+# Run it as many times as you like: first run bootstraps everything, later runs
+# just re-apply changes. Every step below is guarded, so nothing is done twice.
+#
+# Distro-agnostic: works on Ubuntu, Fedora, Arch, Debian, WSL, etc. It never
+# calls apt/dnf/pacman - everything user-facing comes through Nix.
 set -euo pipefail
 
-DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-BACKUP_ROOT="$DOTFILES_DIR/backup"
-BACKUP_DIR=""
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+FLAKE_HOST="user"   # must match flake.nix homeConfigurations.<name>
 TPM_DIR="$HOME/.tmux/plugins/tpm"
-TPM_REPO="https://github.com/tmux-plugins/tpm.git"
 
-MANAGED_FILES=(
-  ".tmux.conf|.tmux.conf|linux"
-  ".config/tmux/tmux-agent-status.sh|.config/tmux/tmux-agent-status.sh|linux"
-  ".config/tmux/tmux-agent-detect.sh|.config/tmux/tmux-agent-detect.sh|linux"
-  ".config/tmux/tmux-agent-statusd.sh|.config/tmux/tmux-agent-statusd.sh|linux"
-  ".config/wezterm/wezterm.lua|.config/wezterm/wezterm.lua|linux,windows"
-  ".config/herdr/config.toml|.config/herdr/config.toml|linux,windows"
-  "assets/images/seed-gundam.jpg|.config/wezterm/images/seed-gundam.jpg|linux,windows"
-)
+# --- 1. Nix (Determinate) -------------------------------------------------
+if command -v nix >/dev/null 2>&1; then
+  echo "==> nix present"
+else
+  echo "==> installing Determinate Nix"
+  curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
+    | sh -s -- install --no-confirm
+  # shellcheck disable=SC1091
+  . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+fi
 
-require_linux() {
-  if [[ "$(uname -s)" != "Linux" ]]; then
-    echo "Unsupported system: this installer is intended for Linux hosts." >&2
-    return 1
-  fi
-}
+# --- 2. Repo symlink ------------------------------------------------------
+# home.nix resolves its mkOutOfStoreSymlink paths through ~/.dotfiles, so this
+# has to point here before the switch. ln -sfn is idempotent.
+echo "==> linking repo to ~/.dotfiles"
+ln -sfn "$DIR" ~/.dotfiles
 
-require_command() {
-  local command_name="$1"
+# --- 3. TPM (tmux plugin manager) -----------------------------------------
+if [ -d "$TPM_DIR/.git" ]; then
+  echo "==> TPM present"
+else
+  echo "==> cloning TPM"
+  git clone https://github.com/tmux-plugins/tpm.git "$TPM_DIR"
+fi
 
-  if ! command -v "$command_name" >/dev/null 2>&1; then
-    echo "Missing required command: $command_name" >&2
-    return 1
-  fi
-}
+# --- 4. Apply home-manager config -----------------------------------------
+# Use the installed CLI when it exists; otherwise (first run) pull it from the
+# flake. Either path produces the same result, so re-running is safe.
+echo "==> applying home-manager config (#$FLAKE_HOST)"
+if command -v home-manager >/dev/null 2>&1; then
+  home-manager switch --flake ~/.dotfiles#"$FLAKE_HOST"
+else
+  nix run github:nix-community/home-manager -- \
+    switch --flake ~/.dotfiles#"$FLAKE_HOST"
+fi
 
-ensure_backup_dir() {
-  local candidate
-  local counter
-  local timestamp
+# --- 5. Login shell (best effort) -----------------------------------------
+# Only acts if zsh isn't already the login shell. Needs sudo for /etc/shells;
+# skips gracefully with a printed manual command if it can't.
+ZSH_BIN="$HOME/.nix-profile/bin/zsh"
+CURRENT_SHELL="$(getent passwd "$USER" 2>/dev/null | cut -d: -f7 || echo "")"
+if [ -x "$ZSH_BIN" ] && [ "$CURRENT_SHELL" != "$ZSH_BIN" ]; then
+  echo "==> setting zsh as login shell"
+  grep -qxF "$ZSH_BIN" /etc/shells 2>/dev/null \
+    || echo "$ZSH_BIN" | sudo tee -a /etc/shells >/dev/null \
+    || echo "    add '$ZSH_BIN' to /etc/shells by hand, then: chsh -s '$ZSH_BIN'"
+  chsh -s "$ZSH_BIN" || echo "    run by hand: chsh -s '$ZSH_BIN'"
+fi
 
-  if [[ -n "$BACKUP_DIR" ]]; then
-    return 0
-  fi
-
-  timestamp="$(date +%Y%m%d-%H%M%S)"
-  candidate="$BACKUP_ROOT/$timestamp"
-  counter=1
-
-  while [[ -e "$candidate" ]]; do
-    counter=$((counter + 1))
-    candidate="$BACKUP_ROOT/$timestamp-$counter"
-  done
-
-  BACKUP_DIR="$candidate"
-  mkdir -p "$BACKUP_DIR"
-}
-
-backup_existing_file() {
-  local target="$1"
-  local relative_path
-  local backup_path
-
-  ensure_backup_dir
-
-  if [[ "$target" == "$HOME/"* ]]; then
-    relative_path="${target#"$HOME/"}"
-  else
-    relative_path="$(basename "$target")"
-  fi
-
-  backup_path="$BACKUP_DIR/$relative_path"
-  mkdir -p "$(dirname "$backup_path")"
-
-  echo "Backing up existing file: $target -> $backup_path"
-  mv "$target" "$backup_path"
-}
-
-link_file() {
-  local source="$1"
-  local target="$2"
-
-  if [[ ! -e "$source" ]]; then
-    echo "Missing source: $source" >&2
-    return 1
-  fi
-
-  if [[ -L "$target" ]]; then
-    local current_target
-    current_target="$(readlink "$target")"
-
-    if [[ "$current_target" == "$source" ]]; then
-      echo "Already linked: $target -> $source"
-      return 0
-    fi
-
-    echo "Replacing symlink: $target -> $current_target"
-    rm "$target"
-  elif [[ -e "$target" ]]; then
-    backup_existing_file "$target"
-  fi
-
-  mkdir -p "$(dirname "$target")"
-  ln -s "$source" "$target"
-  echo "Linked: $target -> $source"
-}
-
-is_managed_on_platform() {
-  local platforms="$1"
-  local platform="$2"
-
-  [[ ",$platforms," == *",$platform,"* ]]
-}
-
-install_dotfiles() {
-  local platform="$1"
-  local entry
-  local source
-  local target
-  local platforms
-
-  for entry in "${MANAGED_FILES[@]}"; do
-    IFS="|" read -r source target platforms <<< "$entry"
-
-    if ! is_managed_on_platform "$platforms" "$platform"; then
-      echo "Skipping $target for $platform."
-      continue
-    fi
-
-    link_file "$DOTFILES_DIR/$source" "$HOME/$target"
-  done
-}
-
-install_tpm() {
-  if [[ -d "$TPM_DIR/.git" ]]; then
-    echo "TPM already installed: $TPM_DIR"
-    return 0
-  fi
-
-  if [[ -e "$TPM_DIR" ]]; then
-    echo "TPM path already exists, skipping clone: $TPM_DIR" >&2
-    return 0
-  fi
-
-  require_command git
-
-  mkdir -p "$(dirname "$TPM_DIR")"
-  git clone "$TPM_REPO" "$TPM_DIR"
-  echo "Installed TPM: $TPM_DIR"
-}
-
-main() {
-  require_linux
-  install_dotfiles "linux"
-  install_tpm
-
-  echo "Done."
-}
-
-main "$@"
+echo "==> done. Open a new terminal for shell/PATH changes to take effect."

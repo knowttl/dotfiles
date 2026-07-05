@@ -11,24 +11,26 @@ $BackupRoot = Join-Path $DotfilesDir 'backup'
 $script:BackupDir = $null
 $Platform = 'windows'
 
+# Sources live under home/ (the repo mirrors the layout home-manager symlinks
+# on Linux). Targets are still installed relative to the Windows home dir.
 $ManagedFiles = @(
   [pscustomobject]@{
-    Source = '.tmux.conf'
+    Source = 'home/.tmux.conf'
     Target = '.tmux.conf'
     Platforms = @('linux')
   },
   [pscustomobject]@{
-    Source = '.config/wezterm/wezterm.lua'
+    Source = 'home/.config/wezterm/wezterm.lua'
     Target = '.config/wezterm/wezterm.lua'
     Platforms = @('linux', 'windows')
   },
   [pscustomobject]@{
-    Source = '.config/herdr/config.toml'
+    Source = 'home/.config/herdr/config.toml'
     Target = '.config/herdr/config.toml'
     Platforms = @('linux', 'windows')
   },
   [pscustomobject]@{
-    Source = 'assets/images/seed-gundam.jpg'
+    Source = 'home/assets/images/seed-gundam.jpg'
     Target = '.config/wezterm/images/seed-gundam.jpg'
     Platforms = @('linux', 'windows')
   }
