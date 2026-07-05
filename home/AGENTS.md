@@ -1,15 +1,64 @@
-# global agent instructions
+# Baseline Agent Guidelines
 
-- Never use the em dash "—". Use plain dash "-" instead
-- When writing commit messages, NEVER auto-add your agent name as co-author
-- Never manually modify CHANGELOG.md files or any files that are marked as auto-generated
-- When making technical decisions, do not give much weight to development cost.
-  Instead, prefer quality, simplicity, robustness, scalability, and long term maintainability.
-- When doing bug fixes, always start with reproducing the bug in an E2E setting as closely aligned with how an end user would experience it as possible.
-  This makes sure you find the real problem so your fix will actually solve it.
-- When end-to-end testing a product, be picky about the UI you see and be obsessed with pixel perfection.
-  If something clearly looks off, even if it is not directly related to what you are doing, try to get it fixed along the way.
-- Apply that same high standard to engineering excellence: lint, test failures, and test flakiness.
-  If you see one, even if it is not caused by what you are working on right now, still get it fixed.
+You MUST follow these rules.
 
+### 1. Think Before Coding
 
+- State assumptions. If uncertain, STOP and ask.
+- Present all interpretations - NEVER pick one silently.
+- Propose simpler alternatives when they exist.
+
+### 2. Write the Minimum
+
+- NEVER add unrequested features, abstractions, flexibility, or configurability.
+- NEVER handle impossible scenarios.
+- If 200 lines could be 50, rewrite to 50.
+
+### 3. Touch Only What You Must
+
+- NEVER "improve" adjacent code, comments, or formatting.
+- ALWAYS match existing style.
+- Notice dead code? Mention it. NEVER delete it.
+- Remove only imports, variables, and functions YOUR changes orphaned.
+- Fix unrelated lint failures, test failures, and flakiness when spotted.
+- Read third-party source only when docs and types are not enough. NEVER edit it.
+
+### 4. Define Success, Then Verify
+
+- Turn tasks into verifiable E2E goals. Loop until they pass.
+- Test E2E as a real user would. Be picky about UI and pixel perfection - fix obvious issues even if unrelated.
+- For multi-step work, state a plan: `1. [Step] -> verify: [check]`.
+
+### 5. Write for Local Reasoning
+
+- Precise names. One term per concept.
+- Small, focused functions.
+- Keep the happy path readable. Isolate error handling and cleanup.
+- Comments ONLY for rationale, constraints, warnings, or contracts.
+
+### 6. Earn Every Abstraction
+
+- Every interface, wrapper, and layer MUST hide more complexity than it adds.
+- Design interfaces around caller needs, not implementation details.
+- Make invalid states impossible. Never make callers repeat defensive checks.
+- Keep domain logic local. Extract shared code only at 2+ callers.
+
+### 7. Refactor Safely
+
+- Refactoring preserves behavior. NEVER rewrite or slip in features.
+- Work in small, reversible, buildable steps.
+- Refactor ONLY the blocking smell. NEVER everything in sight.
+
+### 8. Engineering Habits
+
+- ONE source of truth per piece of system knowledge.
+- Debug from facts. Never guess.
+- Fix small quality decay before it becomes normal.
+
+### 9. Personal Guidelines
+
+- Never use the em dash. Use a plain dash instead.
+- Never auto-add your agent name as a commit co-author.
+- Never manually modify `CHANGELOG.md` files or files marked as auto-generated.
+- In long Markdown files, put each full sentence on its own line.
+- Prefer quality, simplicity, robustness, scalability, and long-term maintainability over development cost.
