@@ -85,9 +85,12 @@ in
 
   programs.git = {
     enable = true;
-    settings.user = {
-      name = "knowttl";
-      email = "knowttl42@gmail.com";
+    settings = {
+      user = {
+        name  = "knowttl";
+        email = "knowttl42@gmail.com";
+      };
+      credential.helper = "!gh auth git-credential";
     };
   };
 
