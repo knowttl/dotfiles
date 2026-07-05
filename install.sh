@@ -40,11 +40,14 @@ fi
 # Use the installed CLI when it exists; otherwise (first run) pull it from the
 # flake. Either path produces the same result, so re-running is safe.
 echo "==> applying home-manager config (#$FLAKE_HOST)"
+# Enable flakes/nix-command via env so child nix processes (home-manager spawns
+# its own) inherit it too - a CLI flag only reaches the outer process.
+export NIX_CONFIG="experimental-features = nix-command flakes"
 if command -v home-manager >/dev/null 2>&1; then
-  home-manager switch --flake ~/.dotfiles#"$FLAKE_HOST"
+  home-manager switch -b backup --flake ~/.dotfiles#"$FLAKE_HOST"
 else
   nix run github:nix-community/home-manager -- \
-    switch --flake ~/.dotfiles#"$FLAKE_HOST"
+    switch -b backup --flake ~/.dotfiles#"$FLAKE_HOST"
 fi
 
 # --- 5. Login shell (best effort) -----------------------------------------
