@@ -1,0 +1,103 @@
+# herdr configuration — shared by Linux and Windows hosts.
+#
+# Keybindings are mapped to mirror the tmux setup in ~/.tmux.conf so the muscle
+# memory carries over. Concept mapping between the two tools:
+#   tmux window  -> herdr tab
+#   tmux session -> herdr workspace
+#   tmux pane    -> herdr pane
+#
+# Live-reload most settings after editing with:  herdr server reload-config
+# (also bound below to prefix + r, matching tmux's reload binding).
+
+onboarding = false
+
+[terminal]
+# Open new panes/tabs in the active pane's directory, matching the tmux splits
+# that use -c "#{pane_current_path}".
+new_cwd = "follow"
+shell_mode = "auto"
+
+[theme]
+# Catppuccin Mocha, matching @catppuccin_flavor "mocha" in .tmux.conf.
+name = "catppuccin"
+auto_switch = false
+
+[theme.custom]
+# Obsidian purple active-border accent, matching the tmux
+# @catppuccin_pane_active_border_style "fg=#7c3aed".
+accent = "#7c3aed"
+
+[ui]
+mouse_capture = true    # tmux: set -g mouse on
+pane_borders = true     # tmux: pane-border-lines heavy
+pane_gaps = true
+confirm_close = true
+
+[keys]
+# tmux uses ctrl+b as the default prefix. (tmux's secondary M-a prefix has no
+# herdr equivalent — herdr supports a single prefix key.)
+prefix = "ctrl+b"
+
+# --- Pane focus: vim h/j/k/l (tmux: bind h/j/k/l select-pane) ---
+focus_pane_left = "prefix+h"
+focus_pane_down = "prefix+j"
+focus_pane_up = "prefix+k"
+focus_pane_right = "prefix+l"
+
+# --- Pane swap: Shift + h/j/k/l (extra, mirrors the focus keys) ---
+swap_pane_left = "prefix+shift+h"
+swap_pane_down = "prefix+shift+j"
+swap_pane_up = "prefix+shift+k"
+swap_pane_right = "prefix+shift+l"
+
+# --- Splits (tmux: bind - split -v / bind \ split -h) ---
+split_horizontal = "prefix+minus"      # tmux "-": stacked (horizontal divider)
+split_vertical = "prefix+backslash"    # tmux "\": side-by-side (vertical divider)
+
+# --- Pane lifecycle ---
+zoom = "prefix+z"           # tmux default: zoom pane
+close_pane = "prefix+x"     # tmux default: kill-pane
+copy_mode = "prefix+["      # tmux default: copy mode
+resize_mode = "prefix+shift+r"  # enter resize mode, then h/j/k/l or arrows
+
+# --- Tabs (tmux windows) ---
+new_tab = "prefix+c"            # tmux: bind c new-window
+rename_tab = "prefix+comma"     # tmux default: rename-window
+switch_tab = "prefix+1..9"      # tmux default: select-window by index
+next_tab = "alt+shift+l"        # tmux: bind -n M-L next-window
+previous_tab = "alt+shift+h"    # tmux: bind -n M-H previous-window
+
+# --- Workspaces (tmux sessions) ---
+new_workspace = "prefix+n"          # tmux: bind n new-session popup
+workspace_picker = "prefix+s"       # tmux: bind s session switcher popup
+rename_workspace = "prefix+shift+comma"
+
+# --- Agents / sidebar / session ---
+goto = "prefix+g"                 # jump to an agent/pane
+detach = "prefix+d"               # tmux default: detach
+toggle_sidebar = "prefix+tab"     # show/hide the agent sidebar
+focus_agent = "prefix+alt+1..9"   # focus agent by index
+
+# --- Custom command keybindings ---------------------------------------------
+
+# Reload the config in place, matching tmux's "bind r source-file ~/.tmux.conf".
+[[keys.command]]
+key = "prefix+r"
+type = "shell"
+command = "herdr server reload-config"
+description = "reload herdr config"
+
+# File manager popup, matching tmux's "bind f display-popup ranger".
+# (ranger is Linux/macOS only; the binding is inert on Windows.)
+[[keys.command]]
+key = "prefix+f"
+type = "pane"
+command = "ranger"
+description = "file manager (ranger)"
+
+# Git UI in a throwaway pane (cross-platform).
+[[keys.command]]
+key = "prefix+alt+g"
+type = "pane"
+command = "lazygit"
+description = "git UI (lazygit)"

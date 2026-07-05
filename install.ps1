@@ -23,6 +23,11 @@ $ManagedFiles = @(
     Platforms = @('linux', 'windows')
   },
   [pscustomobject]@{
+    Source = '.config/herdr/config.toml'
+    Target = '.config/herdr/config.toml'
+    Platforms = @('linux', 'windows')
+  },
+  [pscustomobject]@{
     Source = 'assets/images/seed-gundam.jpg'
     Target = '.config/wezterm/images/seed-gundam.jpg'
     Platforms = @('linux', 'windows')

@@ -6,6 +6,7 @@ Personal configuration files.
 
 - `.tmux.conf` - tmux configuration with mouse support, vim-style pane movement, split bindings, larger history, and TPM plugin declarations.
 - `.config/wezterm/wezterm.lua` - WezTerm configuration shared by Windows and Linux hosts, including the managed background image at `assets/images/seed-gundam.jpg`.
+- `.config/herdr/config.toml` - [herdr](https://herdr.dev) configuration shared by Windows and Linux hosts, with tmux-style keybindings mapped to mirror `.tmux.conf` (vim pane movement, `-`/`\` splits, prefix `ctrl+b`, Catppuccin Mocha theme).
 
 ## Linux Install
 
