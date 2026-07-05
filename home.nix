@@ -67,14 +67,21 @@ in
       bindkey '^f' autosuggest-accept
     '';
     shellAliases = {
-      ".." = "cd ..";
-      add = "git add .";
-      push = "git push";
-      pull = "git pull";
-      m = "git switch main";
-      rebuild = "${dotfiles}/install.sh";
+      ".."     = "cd ..";
+      add      = "git add .";
+      push     = "git push";
+      pull     = "git pull";
+      m        = "git switch main";
+      rebuild  = "${dotfiles}/install.sh";
+      ls       = "ls --color=auto";
+      ll       = "ls --color=auto -lh";
+      la       = "ls --color=auto -lha";
+      grep     = "grep --color=auto";
+      diff     = "diff --color=auto";
     };
   };
+
+  programs.dircolors.enable = true;
 
   programs.git = {
     enable = true;
@@ -89,11 +96,47 @@ in
     settings = {
       add_newline = false;
       format = "$directory$git_branch$git_status$cmd_duration$line_break$character";
-      character = {
-        success_symbol = "[❯](purple)";
-        error_symbol = "[❯](red)";
+      palette = "rose_pine";
+      palettes.rose_pine = {
+        love   = "#f083a0";
+        gold   = "#f6c177";
+        rose   = "#f0b8b5";
+        pine   = "#56b6d8";
+        foam   = "#b4e4ed";
+        iris   = "#d4b8f0";
+        text   = "#e0def4";
+        subtle = "#b8b5d0";
+        muted  = "#7a7890";
       };
-      cmd_duration.format = "[$duration]($style) ";
+      directory = {
+        format            = "[$path]($style) ";
+        style             = "bold foam";
+        truncate_to_repo  = false;
+        truncation_length = 0;
+      };
+      git_branch = {
+        format = "[$symbol$branch]($style) ";
+        style  = "bold rose";
+      };
+      git_status = {
+        format    = "[$all_status$ahead_behind]($style) ";
+        style     = "bold gold";
+        untracked = "[?](bold love)";
+        modified  = "[~](bold gold)";
+        staged    = "[+](bold pine)";
+        deleted   = "[-](bold love)";
+        ahead     = "[⇡$count](bold pine)";
+        behind    = "[⇣$count](bold love)";
+        diverged  = "[⇕](bold love)";
+      };
+      character = {
+        success_symbol = "[❯](bold pine)";
+        error_symbol   = "[❯](bold love)";
+      };
+      cmd_duration = {
+        format = "[$duration]($style) ";
+        style  = "subtle";
+      };
     };
   };
 
