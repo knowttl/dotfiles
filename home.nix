@@ -168,4 +168,5 @@ in
 
   # Let home-manager manage itself so `home-manager` CLI is on PATH.
   programs.home-manager.enable = true;
+  news.display = "silent";
 }
