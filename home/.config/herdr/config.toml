@@ -22,21 +22,20 @@ shell_mode = "auto"
 name = "catppuccin"
 auto_switch = false
 
-[theme.custom]
-# Obsidian purple active-border accent, matching the tmux
-# @catppuccin_pane_active_border_style "fg=#7c3aed".
-accent = "#7c3aed"
-
 [ui]
 mouse_capture = true    # tmux: set -g mouse on
 pane_borders = true     # tmux: pane-border-lines heavy
 pane_gaps = true
 confirm_close = true
+# Obsidian purple active-border accent, matching the tmux
+# @catppuccin_pane_active_border_style "fg=#7c3aed". `accent` is a [ui] key.
+accent = "#7c3aed"
 
 [keys]
-# tmux uses ctrl+b as the default prefix. (tmux's secondary M-a prefix has no
-# herdr equivalent — herdr supports a single prefix key.)
-prefix = "ctrl+b"
+# herdr supports a single prefix key only (no tmux-style prefix2 / send-prefix).
+# tmux binds two: ctrl+b (primary) and M-a (secondary). Using M-a here so alt+a
+# acts as the prefix; ctrl+b is NOT a prefix in herdr.
+prefix = "alt+a"
 
 # --- Pane focus: vim h/j/k/l (tmux: bind h/j/k/l select-pane) ---
 focus_pane_left = "prefix+h"
@@ -65,7 +64,7 @@ new_tab = "prefix+c"            # tmux: bind c new-window
 rename_tab = "prefix+comma"     # tmux default: rename-window
 switch_tab = "prefix+1..9"      # tmux default: select-window by index
 next_tab = "alt+shift+l"        # tmux: bind -n M-L next-window
-previous_tab = "alt+shift+h"    # tmux: bind -n M-H previous-window
+previous_tab = ["alt+shift+h", "prefix+b"]  # tmux: M-H prev-window + bind b previous-window
 
 # --- Workspaces (tmux sessions) ---
 new_workspace = "prefix+n"          # tmux: bind n new-session popup
@@ -94,6 +93,13 @@ key = "prefix+f"
 type = "pane"
 command = "ranger"
 description = "file manager (ranger)"
+
+# Throwaway shell in a scratch pane, matching tmux's "bind t display-popup bash".
+[[keys.command]]
+key = "prefix+t"
+type = "pane"
+command = "bash"
+description = "scratch shell"
 
 # Git UI in a throwaway pane (cross-platform).
 [[keys.command]]
