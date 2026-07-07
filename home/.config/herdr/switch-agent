@@ -32,3 +32,4 @@ fi
 
 target=${selected%%$'\t'*}
 herdr agent focus "$target" >/dev/null
+herdr pane zoom --current --off >/dev/null
