@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected=$(
+  herdr workspace list |
+    jq -r '
+      .result.workspaces[]
+      | [
+          .workspace_id,
+          (if .focused then "*" else " " end),
+          ("#" + (.number | tostring)),
+          .label,
+          ("tabs:" + (.tab_count | tostring)),
+          ("panes:" + (.pane_count | tostring)),
+          .agent_status
+        ]
+      | @tsv
+    ' |
+    fzf \
+      --reverse \
+      --prompt="Workspace> " \
+      --header="Enter: switch workspace" \
+      --delimiter=$'\t' \
+      --with-nth=2.. \
+      --nth=2..
+)
+
+if [[ -z "$selected" ]]; then
+  exit 0
+fi
+
+workspace_id=${selected%%$'\t'*}
+herdr workspace focus "$workspace_id" >/dev/null

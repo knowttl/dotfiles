@@ -68,6 +68,11 @@ config.window_padding = {
 }
 config.keys = {
   {
+    key = 'Backspace',
+    mods = 'CTRL',
+    action = wezterm.action.SendString '\x17',
+  },
+  {
     key = 't',
     mods = 'CTRL',
     action = wezterm.action.SpawnTab 'CurrentPaneDomain',

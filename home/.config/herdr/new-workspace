@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf "Workspace name: "
+IFS= read -r label
+
+if [[ -z "${label//[[:space:]]/}" ]]; then
+  exit 0
+fi
+
+herdr workspace create --label "$label" --focus >/dev/null

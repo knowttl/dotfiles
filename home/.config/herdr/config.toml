@@ -22,6 +22,10 @@ shell_mode = "auto"
 name = "catppuccin"
 auto_switch = false
 
+[theme.custom]
+# Reset panel surfaces so the tab bar inherits the terminal background.
+panel_bg = "reset"
+
 [ui]
 mouse_capture = true    # tmux: set -g mouse on
 pane_borders = true     # tmux: pane-border-lines heavy
@@ -63,16 +67,18 @@ resize_mode = "prefix+shift+r"  # enter resize mode, then h/j/k/l or arrows
 new_tab = "prefix+c"            # tmux: bind c new-window
 rename_tab = "prefix+comma"     # tmux default: rename-window
 switch_tab = "prefix+1..9"      # tmux default: select-window by index
-next_tab = "alt+shift+l"        # tmux: bind -n M-L next-window
-previous_tab = ["alt+shift+h", "prefix+b"]  # tmux: M-H prev-window + bind b previous-window
+next_tab = ["alt+shift+l", "ctrl+l"]        # tmux: bind -n M-L next-window
+previous_tab = ["alt+shift+h", "prefix+b", "ctrl+h"]  # tmux: M-H prev-window + bind b previous-window
 
 # --- Workspaces (tmux sessions) ---
-new_workspace = "prefix+n"          # tmux: bind n new-session popup
-workspace_picker = "prefix+s"       # tmux: bind s session switcher popup
-rename_workspace = "prefix+shift+comma"
+new_workspace = "prefix+shift+n"    # fallback: create workspace without prompt
+workspace_picker = "prefix+shift+s"  # fallback: built-in workspace picker
+rename_workspace = "prefix+shift+w"
+navigate_workspace_down = "j"
+navigate_workspace_up = "k"
 
 # --- Agents / sidebar / session ---
-goto = "prefix+g"                 # jump to an agent/pane
+goto = ["prefix+g", "prefix+w"]   # jump to an agent/pane
 detach = "prefix+d"               # tmux default: detach
 toggle_sidebar = "prefix+tab"     # show/hide the agent sidebar
 focus_agent = "prefix+alt+1..9"   # focus agent by index
@@ -85,6 +91,20 @@ key = "prefix+r"
 type = "shell"
 command = "herdr server reload-config"
 description = "reload herdr config"
+
+# Prompt for a workspace name before creating it.
+[[keys.command]]
+key = "prefix+n"
+type = "pane"
+command = "/home/user/.config/herdr/new-workspace"
+description = "new named workspace"
+
+# Search workspaces with fzf and switch to the selected workspace.
+[[keys.command]]
+key = "prefix+s"
+type = "pane"
+command = "/home/user/.config/herdr/switch-workspace"
+description = "search workspaces"
 
 # File manager popup, matching tmux's "bind f display-popup ranger".
 # (ranger is Linux/macOS only; the binding is inert on Windows.)
