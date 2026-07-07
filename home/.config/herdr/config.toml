@@ -106,6 +106,13 @@ type = "pane"
 command = "/home/user/.config/herdr/switch-workspace"
 description = "search workspaces"
 
+# Search agents with fzf and focus the selected agent.
+[[keys.command]]
+key = "prefix+a"
+type = "pane"
+command = "/home/user/.config/herdr/switch-agent"
+description = "search agents"
+
 # File manager popup, matching tmux's "bind f display-popup ranger".
 # (ranger is Linux/macOS only; the binding is inert on Windows.)
 [[keys.command]]

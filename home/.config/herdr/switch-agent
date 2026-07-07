@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+selected=$(
+  herdr agent list |
+    jq -r '
+      .result.agents[]
+      | [
+          .terminal_id,
+          (if .focused then "*" else " " end),
+          .agent,
+          .agent_status,
+          .workspace_id,
+          .tab_id,
+          .pane_id,
+          (.foreground_cwd // .cwd)
+        ]
+      | @tsv
+    ' |
+    fzf \
+      --reverse \
+      --prompt="Agent> " \
+      --header="Enter: focus agent" \
+      --delimiter=$'\t' \
+      --with-nth=2.. \
+      --nth=2..
+)
+
+if [[ -z "$selected" ]]; then
+  exit 0
+fi
+
+target=${selected%%$'\t'*}
+herdr agent focus "$target" >/dev/null
