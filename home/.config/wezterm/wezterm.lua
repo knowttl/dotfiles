@@ -58,6 +58,7 @@ config.cursor_blink_rate = 0
 config.adjust_window_size_when_changing_font_size = false
 config.audible_bell = 'Disabled'
 config.hide_tab_bar_if_only_one_tab = false
+config.window_close_confirmation = 'NeverPrompt'
 config.window_decorations = 'RESIZE'
 config.window_background_opacity = 1.0
 config.win32_system_backdrop = 'Disable'
@@ -81,7 +82,7 @@ config.keys = {
   {
     key = 'w',
     mods = 'CTRL',
-    action = wezterm.action.CloseCurrentTab { confirm = true },
+    action = wezterm.action.CloseCurrentTab { confirm = false },
   },
   {
     key = 'Tab',
