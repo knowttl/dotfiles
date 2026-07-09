@@ -10,12 +10,14 @@
     home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
 
-    # Unstable is used ONLY to source packages that haven't landed in stable
-    # yet (currently: herdr). The base system stays on stable nixpkgs above.
-    nixpkgs-unstable.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # herdr ships its own flake. Source it directly so we track herdr's own
+    # releases (0.7.3+) instead of waiting for them to land in stable nixpkgs,
+    # which lags herdr upstream. Uses its own pinned nixpkgs (no `follows`) so
+    # its build is not forced onto our stable set.
+    herdr-flake.url = "github:ogulcancelik/herdr";
   };
 
-  outputs = { self, nixpkgs, nixpkgs-unstable, home-manager, ... }:
+  outputs = { self, nixpkgs, home-manager, herdr-flake, ... }:
     let
       # Distro-agnostic: this is the CPU/OS pair, not a distribution.
       # It works the same on Ubuntu, Fedora, Arch, Debian, etc.
@@ -25,10 +27,8 @@
       # Overlay: graft individual package fixes onto the stable set.
       # Everything not listed here still comes from stable nixpkgs.
       overlay = final: prev: {
-        inherit (import nixpkgs-unstable {
-          inherit system;
-          config.allowUnfree = true;
-        }) herdr;
+        # herdr from its own flake (see the herdr-flake input above).
+        herdr = herdr-flake.packages.${system}.herdr;
 
         opencode = prev.stdenvNoCC.mkDerivation rec {
           pname = "opencode";
