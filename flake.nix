@@ -22,14 +22,35 @@
       # Use "aarch64-linux" on ARM machines (Raspberry Pi, ARM servers, WSL on ARM).
       system = "x86_64-linux";
 
-      # Overlay: graft individual packages from unstable onto the stable set.
-      # Everything not listed here still comes from stable nixpkgs. Add a name
-      # to this overlay only when the package isn't in stable yet.
+      # Overlay: graft individual package fixes onto the stable set.
+      # Everything not listed here still comes from stable nixpkgs.
       overlay = final: prev: {
         inherit (import nixpkgs-unstable {
           inherit system;
           config.allowUnfree = true;
         }) herdr;
+
+        opencode = prev.stdenvNoCC.mkDerivation rec {
+          pname = "opencode";
+          version = "1.17.15";
+
+          src = prev.fetchurl {
+            url = "https://registry.npmjs.org/opencode-linux-x64-baseline/-/opencode-linux-x64-baseline-${version}.tgz";
+            hash = "sha512-jUPpE5SqnzOpgu+s0IrivU/UK3l7JKZtSuEKpgtrcdntAqZ7W0LtiUsCIo18d8ryubg3HSnGdmLZwesKdtpOSA==";
+          };
+
+          nativeBuildInputs = [ prev.makeWrapper ];
+
+          installPhase = ''
+            runHook preInstall
+
+            install -Dm755 bin/opencode $out/bin/.opencode-wrapped
+            makeWrapper $out/bin/.opencode-wrapped $out/bin/opencode \
+              --prefix PATH : ${prev.lib.makeBinPath [ prev.ripgrep ]}
+
+            runHook postInstall
+          '';
+        };
       };
 
       pkgs = import nixpkgs {
