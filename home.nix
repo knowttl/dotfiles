@@ -65,6 +65,11 @@ in
     syntaxHighlighting.enable = true;  # commands turn green when valid
     initContent = ''
       bindkey '^f' autosuggest-accept
+
+      # Load nvm so npm-global CLIs installed under nvm's node
+      # (gh-axi, atelier-axi, ...) are on PATH in interactive shells.
+      export NVM_DIR="$HOME/.nvm"
+      [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
     '';
     shellAliases = {
       ".."     = "cd ..";
