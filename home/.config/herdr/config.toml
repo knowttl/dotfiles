@@ -31,6 +31,7 @@ mouse_capture = true    # tmux: set -g mouse on
 pane_borders = true     # tmux: pane-border-lines heavy
 pane_gaps = true
 confirm_close = true
+host_cursor = "drawn"
 # Obsidian purple active-border accent, matching the tmux
 # @catppuccin_pane_active_border_style "fg=#7c3aed". `accent` is a [ui] key.
 accent = "#7c3aed"
