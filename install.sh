@@ -11,6 +11,24 @@ DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 FLAKE_HOST="user"   # must match flake.nix homeConfigurations.<name>
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 
+# --- Arguments ------------------------------------------------------------
+# --update / -u bumps every pinned flake input to its newest version before
+# applying, so the switch below installs the latest packages.
+UPDATE=0
+for arg in "$@"; do
+  case "$arg" in
+    -u|--update) UPDATE=1 ;;
+    -h|--help)
+      echo "usage: install.sh [--update]"
+      echo "  --update, -u   update all packages to their newest versions"
+      exit 0 ;;
+    *)
+      echo "unknown argument: $arg" >&2
+      echo "usage: install.sh [--update]" >&2
+      exit 1 ;;
+  esac
+done
+
 # --- 1. Nix (Determinate) -------------------------------------------------
 if command -v nix >/dev/null 2>&1; then
   echo "==> nix present"
@@ -43,6 +61,12 @@ echo "==> applying home-manager config (#$FLAKE_HOST)"
 # Enable flakes/nix-command via env so child nix processes (home-manager spawns
 # its own) inherit it too - a CLI flag only reaches the outer process.
 export NIX_CONFIG="experimental-features = nix-command flakes"
+
+# With --update, refresh flake.lock first so the switch pulls newest packages.
+if [ "$UPDATE" -eq 1 ]; then
+  echo "==> updating flake inputs to newest versions"
+  nix flake update --flake "$DIR"
+fi
 if command -v home-manager >/dev/null 2>&1; then
   home-manager switch -b backup --flake ~/.dotfiles#"$FLAKE_HOST"
 else
