@@ -30,6 +30,27 @@
         # herdr from its own flake (see the herdr-flake input above).
         herdr = herdr-flake.packages.${system}.herdr;
 
+        # codex from OpenAI's GitHub release. Stable nixpkgs lags upstream,
+        # so we pin the prebuilt static-musl binary directly. Bump `version`
+        # and `hash` together when a new release lands, then ./install.sh.
+        codex = prev.stdenvNoCC.mkDerivation rec {
+          pname = "codex";
+          version = "0.144.1";
+
+          src = prev.fetchurl {
+            url = "https://github.com/openai/codex/releases/download/rust-v${version}/codex-x86_64-unknown-linux-musl.tar.gz";
+            hash = "sha256-hAka4gxl/MfUEg25fRvVfX/435x2Cft4HHjC671PWig=";
+          };
+
+          sourceRoot = ".";
+
+          installPhase = ''
+            runHook preInstall
+            install -Dm755 codex-x86_64-unknown-linux-musl $out/bin/codex
+            runHook postInstall
+          '';
+        };
+
         opencode = prev.stdenvNoCC.mkDerivation rec {
           pname = "opencode";
           version = "1.17.15";
