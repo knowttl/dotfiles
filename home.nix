@@ -57,6 +57,7 @@ in
   ];
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
+  home.sessionPath = [ "$HOME/.local/bin" ];
 
   # ---- Shell ---------------------------------------------------------------
   programs.zsh = {
