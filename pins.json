@@ -1,0 +1,10 @@
+{
+  "codex": {
+    "version": "0.144.3",
+    "hash": "sha256-ubSujptWHGTfvF71LGMZy6dQrIfePH9ViFAmIx466ok="
+  },
+  "opencode": {
+    "version": "1.17.19",
+    "hash": "sha512-Z+8bkiGMpGcr9OdFY4LU3Rhp2weaQF3y7jfvYc6+r2cQE/Zh3vrpS9NXRI8vOUkHT4eXMKl35JI0GaS8rz+P2w=="
+  }
+}

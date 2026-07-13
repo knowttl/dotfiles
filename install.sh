@@ -66,6 +66,8 @@ export NIX_CONFIG="experimental-features = nix-command flakes"
 if [ "$UPDATE" -eq 1 ]; then
   echo "==> updating flake inputs to newest versions"
   nix flake update --flake "$DIR"
+  echo "==> refreshing hand-pinned binaries (pins.json)"
+  "$DIR/update-pins.sh"
 fi
 if command -v home-manager >/dev/null 2>&1; then
   home-manager switch -b backup --flake ~/.dotfiles#"$FLAKE_HOST"
