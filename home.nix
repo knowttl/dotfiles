@@ -47,9 +47,9 @@ in
     nodejs
 
     # --- coding agents ---
-    claude-code
-    codex
-    opencode
+    # claude-code, codex and opencode are installed via their native installers
+    # (see install.sh) so they self-update to the latest release; nixpkgs lags
+    # too far behind.
     herdr     # terminal agent multiplexer (from unstable overlay; see flake.nix)
     # fonts everything renders in (see wezterm.lua fallback list)
     nerd-fonts.jetbrains-mono
@@ -57,7 +57,9 @@ in
   ];
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
-  home.sessionPath = [ "$HOME/.local/bin" ];
+  # ~/.local/bin: claude-code + codex native installs; ~/.opencode/bin: opencode
+  # native install (its installer uses its own dir). See install.sh.
+  home.sessionPath = [ "$HOME/.local/bin" "$HOME/.opencode/bin" ];
 
   # ---- Shell ---------------------------------------------------------------
   programs.zsh = {

@@ -66,8 +66,6 @@ export NIX_CONFIG="experimental-features = nix-command flakes"
 if [ "$UPDATE" -eq 1 ]; then
   echo "==> updating flake inputs to newest versions"
   nix flake update --flake "$DIR"
-  echo "==> refreshing hand-pinned binaries (pins.json)"
-  "$DIR/update-pins.sh"
 fi
 if command -v home-manager >/dev/null 2>&1; then
   home-manager switch -b backup --flake ~/.dotfiles#"$FLAKE_HOST"
@@ -76,7 +74,18 @@ else
     switch -b backup --flake ~/.dotfiles#"$FLAKE_HOST"
 fi
 
-# --- 5. Login shell (best effort) -----------------------------------------
+# --- 5. Coding agents (native installers) ---------------------------------
+# Installed outside Nix so each tool's built-in auto-updater can keep it on the
+# latest release; nixpkgs lags too far behind. Both installers are idempotent
+# and upgrade in place, so re-running just refreshes to newest.
+echo "==> installing/updating Claude Code (native installer)"
+curl -fsSL https://claude.ai/install.sh | bash
+echo "==> installing/updating Codex (native installer)"
+curl -fsSL https://chatgpt.com/codex/install.sh | sh
+echo "==> installing/updating opencode (native installer)"
+curl -fsSL https://opencode.ai/install | bash
+
+# --- 6. Login shell (best effort) -----------------------------------------
 # Only acts if zsh isn't already the login shell. Needs sudo for /etc/shells;
 # skips gracefully with a printed manual command if it can't.
 ZSH_BIN="$HOME/.nix-profile/bin/zsh"

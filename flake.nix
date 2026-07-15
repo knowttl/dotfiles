@@ -24,61 +24,11 @@
       # Use "aarch64-linux" on ARM machines (Raspberry Pi, ARM servers, WSL on ARM).
       system = "x86_64-linux";
 
-      # Version + hash for hand-pinned binary packages (those not tracked as
-      # flake inputs). Refreshed automatically by update-pins.sh, which runs
-      # from `install.sh --update`. Do not edit pins.json by hand.
-      pins = builtins.fromJSON (builtins.readFile ./pins.json);
-
       # Overlay: graft individual package fixes onto the stable set.
       # Everything not listed here still comes from stable nixpkgs.
       overlay = final: prev: {
         # herdr from its own flake (see the herdr-flake input above).
         herdr = herdr-flake.packages.${system}.herdr;
-
-        # codex from OpenAI's GitHub release. Stable nixpkgs lags upstream, so
-        # we pin the prebuilt static-musl binary directly. version + hash come
-        # from pins.json (see update-pins.sh).
-        codex = prev.stdenvNoCC.mkDerivation rec {
-          pname = "codex";
-          version = pins.codex.version;
-
-          src = prev.fetchurl {
-            url = "https://github.com/openai/codex/releases/download/rust-v${version}/codex-x86_64-unknown-linux-musl.tar.gz";
-            hash = pins.codex.hash;
-          };
-
-          sourceRoot = ".";
-
-          installPhase = ''
-            runHook preInstall
-            install -Dm755 codex-x86_64-unknown-linux-musl $out/bin/codex
-            runHook postInstall
-          '';
-        };
-
-        # opencode prebuilt binary from npm. version + hash come from pins.json
-        # (see update-pins.sh).
-        opencode = prev.stdenvNoCC.mkDerivation rec {
-          pname = "opencode";
-          version = pins.opencode.version;
-
-          src = prev.fetchurl {
-            url = "https://registry.npmjs.org/opencode-linux-x64-baseline/-/opencode-linux-x64-baseline-${version}.tgz";
-            hash = pins.opencode.hash;
-          };
-
-          nativeBuildInputs = [ prev.makeWrapper ];
-
-          installPhase = ''
-            runHook preInstall
-
-            install -Dm755 bin/opencode $out/bin/.opencode-wrapped
-            makeWrapper $out/bin/.opencode-wrapped $out/bin/opencode \
-              --prefix PATH : ${prev.lib.makeBinPath [ prev.ripgrep ]}
-
-            runHook postInstall
-          '';
-        };
       };
 
       pkgs = import nixpkgs {
