@@ -104,10 +104,24 @@ curl -fsSL https://opencode.ai/install | bash
 # Download to a temp name then mv so a running herdr is swapped atomically.
 echo "==> installing/updating herdr (prebuilt release binary)"
 mkdir -p "$HOME/.local/bin"
+HERDR_VERSION_BEFORE="$("$HOME/.local/bin/herdr" --version 2>/dev/null || echo "")"
 curl -fsSL -o "$HOME/.local/bin/herdr.tmp" \
   "https://github.com/ogulcancelik/herdr/releases/latest/download/herdr-linux-$(uname -m)"
 chmod +x "$HOME/.local/bin/herdr.tmp"
 mv "$HOME/.local/bin/herdr.tmp" "$HOME/.local/bin/herdr"
+
+# A running server keeps serving the old binary's protocol, so every CLI call
+# from the new one fails until it is restarted. The swap is what creates the
+# skew, so say so here - silently upgrading under a live server leaves the
+# fzf keybindings (prefix+a / prefix+s) failing with no visible cause.
+HERDR_VERSION_AFTER="$("$HOME/.local/bin/herdr" --version 2>/dev/null || echo "")"
+if [ -n "$HERDR_VERSION_BEFORE" ] \
+  && [ "$HERDR_VERSION_BEFORE" != "$HERDR_VERSION_AFTER" ] \
+  && pgrep -f 'herdr server' >/dev/null 2>&1; then
+  echo "    upgraded $HERDR_VERSION_BEFORE -> $HERDR_VERSION_AFTER with a server running."
+  echo "    restart herdr to pick it up (this exits every pane process):"
+  echo "      HERDR_SOCKET_PATH=\"\$HOME/.config/herdr/herdr.sock\" herdr server stop"
+fi
 
 # --- 6. Login shell (best effort) -----------------------------------------
 # Only acts if zsh isn't already the login shell. Needs sudo for /etc/shells;

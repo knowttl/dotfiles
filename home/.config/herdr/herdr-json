@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+# Run a herdr CLI command and print its JSON result on stdout.
+#
+# On failure - most often a protocol mismatch after the binary is upgraded under
+# a still-running server - herdr exits non-zero, leaves stdout empty and writes a
+# JSON error to stderr. Piped straight into jq that degrades into a silently
+# empty fzf picker, so the keybinding looks broken with no clue why. Surface the
+# message instead, and hold the pane open: herdr closes a command pane the moment
+# its process exits.
+set -uo pipefail
+
+if out=$(herdr "$@" 2>&1); then
+  printf '%s' "$out"
+  exit 0
+fi
+
+message=$(printf '%s' "$out" | jq -r '.error.message // empty' 2>/dev/null) || message=""
+[[ -n "$message" ]] || message="$out"
+
+printf '\nherdr %s failed:\n\n%s\n\n' "$*" "$message" >&2
+read -rsn1 -p "Press any key to close."
+exit 1

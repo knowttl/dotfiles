@@ -8,4 +8,4 @@ if [[ -z "${label//[[:space:]]/}" ]]; then
   exit 0
 fi
 
-herdr workspace create --label "$label" --focus >/dev/null
+"$HOME/.config/herdr/herdr-json" workspace create --label "$label" --focus >/dev/null

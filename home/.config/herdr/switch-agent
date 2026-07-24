@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+herdr_json="$HOME/.config/herdr/herdr-json"
+
+agents=$("$herdr_json" agent list)
+
 selected=$(
-  herdr agent list |
+  printf '%s' "$agents" |
     jq -r '
       .result.agents[]
       | [
@@ -31,5 +35,5 @@ if [[ -z "$selected" ]]; then
 fi
 
 target=${selected%%$'\t'*}
-herdr agent focus "$target" >/dev/null
-herdr pane zoom --current --off >/dev/null
+"$herdr_json" agent focus "$target" >/dev/null
+"$herdr_json" pane zoom --current --off >/dev/null

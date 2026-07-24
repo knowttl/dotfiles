@@ -1,8 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+herdr_json="$HOME/.config/herdr/herdr-json"
+
+workspaces=$("$herdr_json" workspace list)
+
 selected=$(
-  herdr workspace list |
+  printf '%s' "$workspaces" |
     jq -r '
       .result.workspaces[]
       | [
@@ -30,4 +34,4 @@ if [[ -z "$selected" ]]; then
 fi
 
 workspace_id=${selected%%$'\t'*}
-herdr workspace focus "$workspace_id" >/dev/null
+"$herdr_json" workspace focus "$workspace_id" >/dev/null
