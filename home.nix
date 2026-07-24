@@ -9,10 +9,11 @@ let
 in
 {
   # ---- Identity ------------------------------------------------------------
-  # Change these two lines for a different user/host. Everything else is
-  # distro-agnostic and derives from homeDirectory.
-  home.username = "user";
-  home.homeDirectory = "/home/user";
+  # Taken from the environment so the same config works for any user on any
+  # host. Requires evaluating with --impure (install.sh passes it). Everything
+  # else is distro-agnostic and derives from homeDirectory.
+  home.username = builtins.getEnv "USER";
+  home.homeDirectory = builtins.getEnv "HOME";
 
   # The release you first installed with. Never edit after first switch unless
   # a home-manager release note tells you to - it is NOT the same as the
@@ -50,7 +51,6 @@ in
     # claude-code, codex and opencode are installed via their native installers
     # (see install.sh) so they self-update to the latest release; nixpkgs lags
     # too far behind.
-    herdr     # terminal agent multiplexer (from unstable overlay; see flake.nix)
     # fonts everything renders in (see wezterm.lua fallback list)
     nerd-fonts.jetbrains-mono
     nerd-fonts.hack

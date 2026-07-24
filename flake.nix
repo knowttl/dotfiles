@@ -9,37 +9,24 @@
 
     home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
-
-    # herdr ships its own flake. Source it directly so we track herdr's own
-    # releases (0.7.3+) instead of waiting for them to land in stable nixpkgs,
-    # which lags herdr upstream. Uses its own pinned nixpkgs (no `follows`) so
-    # its build is not forced onto our stable set.
-    herdr-flake.url = "github:ogulcancelik/herdr";
   };
 
-  outputs = { self, nixpkgs, home-manager, herdr-flake, ... }:
+  outputs = { self, nixpkgs, home-manager, ... }:
     let
       # Distro-agnostic: this is the CPU/OS pair, not a distribution.
       # It works the same on Ubuntu, Fedora, Arch, Debian, etc.
       # Use "aarch64-linux" on ARM machines (Raspberry Pi, ARM servers, WSL on ARM).
       system = "x86_64-linux";
 
-      # Overlay: graft individual package fixes onto the stable set.
-      # Everything not listed here still comes from stable nixpkgs.
-      overlay = final: prev: {
-        # herdr from its own flake (see the herdr-flake input above).
-        herdr = herdr-flake.packages.${system}.herdr;
-      };
-
       pkgs = import nixpkgs {
         inherit system;
         config.allowUnfree = true; # claude-code and friends are unfree
-        overlays = [ overlay ];
       };
     in {
-      # `home-manager switch --flake .#user` builds this.
-      # The name here must match install.sh (FLAKE_HOST).
-      homeConfigurations."user" = home-manager.lib.homeManagerConfiguration {
+      # `home-manager switch --flake .#default --impure` builds this.
+      # The name here must match install.sh (FLAKE_HOST). User-agnostic:
+      # home.nix reads USER/HOME from the environment (hence --impure).
+      homeConfigurations."default" = home-manager.lib.homeManagerConfiguration {
         inherit pkgs;
         modules = [ ./home.nix ];
       };

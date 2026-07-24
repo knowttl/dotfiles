@@ -8,7 +8,7 @@
 set -euo pipefail
 
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-FLAKE_HOST="user"   # must match flake.nix homeConfigurations.<name>
+FLAKE_HOST="default"   # must match flake.nix homeConfigurations.<name>
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 
 # --- Arguments ------------------------------------------------------------
@@ -51,7 +51,8 @@ if [ -d "$TPM_DIR/.git" ]; then
   echo "==> TPM present"
 else
   echo "==> cloning TPM"
-  git clone https://github.com/tmux-plugins/tpm.git "$TPM_DIR"
+  # GIT_TERMINAL_PROMPT=0 fails fast instead of prompting for credentials.
+  GIT_TERMINAL_PROMPT=0 git clone https://github.com/tmux-plugins/tpm.git "$TPM_DIR"
 fi
 
 # --- 4. Apply home-manager config -----------------------------------------
@@ -62,16 +63,26 @@ echo "==> applying home-manager config (#$FLAKE_HOST)"
 # its own) inherit it too - a CLI flag only reaches the outer process.
 export NIX_CONFIG="experimental-features = nix-command flakes"
 
+# Authenticate Nix's GitHub API calls when gh is logged in, lifting the
+# 60/hour anonymous rate limit (flake inputs resolve via api.github.com).
+# Skips silently on hosts where gh is absent or not yet authenticated.
+if token=$(gh auth token 2>/dev/null); then
+  NIX_CONFIG="$NIX_CONFIG
+access-tokens = github.com=$token"
+fi
+
 # With --update, refresh flake.lock first so the switch pulls newest packages.
 if [ "$UPDATE" -eq 1 ]; then
   echo "==> updating flake inputs to newest versions"
   nix flake update --flake "$DIR"
 fi
+# --impure lets home.nix read USER/HOME from the environment, so the same
+# config applies for any user on any host.
 if command -v home-manager >/dev/null 2>&1; then
-  home-manager switch -b backup --flake ~/.dotfiles#"$FLAKE_HOST"
+  home-manager switch -b backup --impure --flake ~/.dotfiles#"$FLAKE_HOST"
 else
   nix run github:nix-community/home-manager -- \
-    switch -b backup --flake ~/.dotfiles#"$FLAKE_HOST"
+    switch -b backup --impure --flake ~/.dotfiles#"$FLAKE_HOST"
 fi
 
 # --- 5. Coding agents (native installers) ---------------------------------
@@ -81,9 +92,22 @@ fi
 echo "==> installing/updating Claude Code (native installer)"
 curl -fsSL https://claude.ai/install.sh | bash
 echo "==> installing/updating Codex (native installer)"
-curl -fsSL https://chatgpt.com/codex/install.sh | sh
+# CODEX_NON_INTERACTIVE answers "no" to the installer's /dev/tty prompts
+# ("Start Codex now?"), which would otherwise hang the script mid-install.
+curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh
 echo "==> installing/updating opencode (native installer)"
 curl -fsSL https://opencode.ai/install | bash
+
+# herdr has no installer script, but its CI publishes a prebuilt binary per
+# release - downloading it beats the minutes-long Rust build its flake costs.
+# releases/latest/download is a plain redirect, not the rate-limited API.
+# Download to a temp name then mv so a running herdr is swapped atomically.
+echo "==> installing/updating herdr (prebuilt release binary)"
+mkdir -p "$HOME/.local/bin"
+curl -fsSL -o "$HOME/.local/bin/herdr.tmp" \
+  "https://github.com/ogulcancelik/herdr/releases/latest/download/herdr-linux-$(uname -m)"
+chmod +x "$HOME/.local/bin/herdr.tmp"
+mv "$HOME/.local/bin/herdr.tmp" "$HOME/.local/bin/herdr"
 
 # --- 6. Login shell (best effort) -----------------------------------------
 # Only acts if zsh isn't already the login shell. Needs sudo for /etc/shells;

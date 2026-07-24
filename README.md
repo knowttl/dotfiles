@@ -11,8 +11,10 @@ PowerShell installer - see [Windows](#windows).
 
 Running the switch builds:
 
-- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, tmux, git, ranger,
-  the coding agents claude-code / codex / opencode, and herdr)
+- Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, tmux, git, ranger)
+- Tools installed outside Nix so they track upstream releases instead of
+  nixpkgs: the coding agents claude-code / codex / opencode via their native
+  installers, and herdr as the prebuilt binary from its GitHub releases
 - Neovim's toolchain deps from Nix (gcc, make, nodejs, unzip) so treesitter,
   telescope, and Mason's language servers have what they need. LSP servers and
   formatters themselves are still managed by Mason inside Neovim - see
@@ -32,10 +34,7 @@ Running the switch builds:
   `apt`/`dnf`/`pacman`.
 - **Stable by default.** `flake.nix` pins nixpkgs and home-manager to the
   current stable NixOS release (`nixos-26.05` / `release-26.05`). To upgrade,
-  bump both branch numbers together and run `./install.sh`. A second
-  `nixpkgs-unstable` input feeds a small overlay used **only** for packages not
-  yet in stable (currently just `herdr`); everything else stays on stable. When
-  a package lands in stable, drop it from the overlay in `flake.nix`.
+  bump both branch numbers together and run `./install.sh`.
 - **Edit-in-place.** The real config files live under `home/`. `home.nix` uses
   `mkOutOfStoreSymlink` to point `~/.config/nvim`, `~/.config/wezterm`,
   `~/.config/tmux`, `~/.config/herdr`, and `~/.tmux.conf` straight at this repo,
@@ -89,15 +88,15 @@ system:
 
 ```sh
 nix flake check
-nix build .#homeConfigurations.user.activationPackage --dry-run
+nix build --impure .#homeConfigurations.default.activationPackage --dry-run
 ```
 
 ## Make it yours
 
-- **Username and home path** `user` / `/home/user`, in three places:
-  `flake.nix` (`homeConfigurations."user"`), `home.nix`
-  (`home.username` / `home.homeDirectory`), and the `FLAKE_HOST` variable in
-  `install.sh`. All must match.
+- **Username and home path** are taken from `$USER` / `$HOME` at switch time
+  (`home.nix` reads them via `builtins.getEnv`, which is why `install.sh`
+  passes `--impure`).
+  Nothing to edit for a different user or host.
 - **Git identity** in `home.nix` (`knowttl` / `knowttl42@gmail.com`).
 - **Agent policy** `home/AGENTS.md` started as the template author's personal
   instructions and is symlinked to Claude / Codex / opencode. Edit it to your
