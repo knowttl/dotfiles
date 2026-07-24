@@ -97,21 +97,21 @@ description = "reload herdr config"
 [[keys.command]]
 key = "prefix+n"
 type = "pane"
-command = "/home/user/.config/herdr/new-workspace"
+command = "$HOME/.config/herdr/new-workspace"
 description = "new named workspace"
 
 # Search workspaces with fzf and switch to the selected workspace.
 [[keys.command]]
 key = "prefix+s"
 type = "pane"
-command = "/home/user/.config/herdr/switch-workspace"
+command = "$HOME/.config/herdr/switch-workspace"
 description = "search workspaces"
 
 # Search agents with fzf and focus the selected agent.
 [[keys.command]]
 key = "prefix+a"
 type = "pane"
-command = "/home/user/.config/herdr/switch-agent"
+command = "$HOME/.config/herdr/switch-agent"
 description = "search agents"
 
 # File manager popup, matching tmux's "bind f display-popup ranger".
