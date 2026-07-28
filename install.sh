@@ -113,6 +113,7 @@ curl -fsSL https://opencode.ai/install | bash
 echo "==> installing/updating Pi (native installer)"
 # Pi's installer uses /dev/tty for its action menu. A new session has no
 # controlling terminal, so it automatically installs or updates without a prompt.
+export PI_TELEMETRY=0
 setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
 export PATH="$HOME/.local/bin:$PATH"
 echo "==> installing/updating Pi packages"
@@ -120,6 +121,8 @@ pi install npm:pi-subagents
 pi install npm:pi-web-access
 pi install npm:@ff-labs/pi-fff
 pi install npm:pi-stop
+pi install npm:pi-effort
+pi install npm:@aliou/pi-processes
 
 # herdr has no installer script, but its CI publishes a prebuilt binary per
 # release - downloading it beats the minutes-long Rust build its flake costs.
