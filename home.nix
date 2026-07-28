@@ -171,7 +171,10 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.tmux.conf";
 
   # One agent policy, shared across the three agent CLIs. Edit home/AGENTS.md
-  # (it's the template author's - make it yours) and all three pick it up.
+  # (it's the template author's - make it yours) and every agent entry point
+  # picks it up.
+  home.file."AGENTS.md".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
   home.file.".claude/CLAUDE.md".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/AGENTS.md";
   home.file.".codex/AGENTS.md".source =
