@@ -87,7 +87,7 @@ fi
 
 # --- 5. Coding agents (native installers) ---------------------------------
 # Installed outside Nix so each tool's built-in auto-updater can keep it on the
-# latest release; nixpkgs lags too far behind. Both installers are idempotent
+# latest release; nixpkgs lags too far behind. The installers are idempotent
 # and upgrade in place, so re-running just refreshes to newest.
 echo "==> installing/updating Claude Code (native installer)"
 curl -fsSL https://claude.ai/install.sh | bash
@@ -97,6 +97,10 @@ echo "==> installing/updating Codex (native installer)"
 curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh
 echo "==> installing/updating opencode (native installer)"
 curl -fsSL https://opencode.ai/install | bash
+echo "==> installing/updating Pi (native installer)"
+# Pi's installer uses /dev/tty for its action menu. A new session has no
+# controlling terminal, so it automatically installs or updates without a prompt.
+setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
 
 # herdr has no installer script, but its CI publishes a prebuilt binary per
 # release - downloading it beats the minutes-long Rust build its flake costs.

@@ -13,7 +13,7 @@ Running the switch builds:
 
 - Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, tmux, git, ranger)
 - Tools installed outside Nix so they track upstream releases instead of
-  nixpkgs: the coding agents claude-code / codex / opencode via their native
+  nixpkgs: the coding agents claude-code / codex / opencode / pi via their native
   installers, and herdr as the prebuilt binary from its GitHub releases
 - Neovim's toolchain deps from Nix (gcc, make, nodejs, unzip) so treesitter,
   telescope, and Mason's language servers have what they need. LSP servers and
