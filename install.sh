@@ -167,10 +167,12 @@ curl -fsSL https://kunchenguid.github.io/treehouse/install.sh | sh
 echo "==> installing/updating gh-axi"
 npm install --global gh-axi@latest
 echo "==> installing/updating no-mistakes and gh-axi skills"
+# Keep the canonical global skills in ~/.agents/skills and expose them only to
+# Claude Code through ~/.claude/skills. Codex reads the shared global store.
 npx --yes skills add kunchenguid/no-mistakes \
-  --skill no-mistakes --global --agent '*' --yes
+  --skill no-mistakes --global --agent claude-code --yes
 npx --yes skills add kunchenguid/gh-axi \
-  --skill gh-axi --global --agent '*' --yes
+  --skill gh-axi --global --agent claude-code --yes
 
 echo "==> installing/updating Pi packages"
 pi install npm:pi-subagents
