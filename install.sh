@@ -145,6 +145,33 @@ echo "==> installing/updating Pi (native installer)"
 export PI_TELEMETRY=0
 setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
 export PATH="$HOME/.local/bin:$PATH"
+
+echo "==> installing/updating no-mistakes"
+if command -v no-mistakes >/dev/null 2>&1; then
+  no_mistakes_update_output=""
+  if ! no_mistakes_update_output="$(no-mistakes update --yes 2>&1)"; then
+    printf '%s\n' "$no_mistakes_update_output"
+    if ! printf '%s\n' "$no_mistakes_update_output" \
+      | grep -q 'active pipeline runs'; then
+      exit 1
+    fi
+    echo "    daemon restart deferred while a pipeline is active"
+  else
+    printf '%s\n' "$no_mistakes_update_output"
+  fi
+else
+  curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh
+fi
+echo "==> installing/updating treehouse"
+curl -fsSL https://kunchenguid.github.io/treehouse/install.sh | sh
+echo "==> installing/updating gh-axi"
+npm install --global gh-axi@latest
+echo "==> installing/updating no-mistakes and gh-axi skills"
+npx --yes skills add kunchenguid/no-mistakes \
+  --skill no-mistakes --global --agent '*' --yes
+npx --yes skills add kunchenguid/gh-axi \
+  --skill gh-axi --global --agent '*' --yes
+
 echo "==> installing/updating Pi packages"
 pi install npm:pi-subagents
 pi install npm:pi-web-access
