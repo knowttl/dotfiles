@@ -175,14 +175,56 @@ npx --yes skills add kunchenguid/gh-axi \
   --skill gh-axi --global --agent claude-code --yes
 
 echo "==> installing/updating Pi packages"
-pi install npm:pi-subagents
-pi install npm:pi-web-access
-pi install npm:@ff-labs/pi-fff
-pi install npm:pi-stop
-pi install npm:pi-effort
-pi install npm:@aliou/pi-processes
-pi install npm:pi-mcp-adapter
-pi install npm:@juicesharp/rpiv-ask-user-question
+PI_PACKAGES=(
+  npm:@tintinweb/pi-subagents
+  npm:pi-web-access
+  npm:@ff-labs/pi-fff
+  npm:pi-stop
+  npm:pi-effort
+  npm:pi-patty-bg-tasks
+  npm:pi-mcp-adapter
+  npm:@juicesharp/rpiv-ask-user-question
+)
+
+for package in "${PI_PACKAGES[@]}"; do
+  pi install "$package"
+done
+
+is_managed_pi_package() {
+  local package
+  for package in "${PI_PACKAGES[@]}"; do
+    [[ "$package" == "$1" ]] && return 0
+  done
+  return 1
+}
+
+while read -r package; do
+  [[ -z "$package" ]] && continue
+  if ! is_managed_pi_package "$package"; then
+    echo "==> removing unmanaged Pi package $package"
+    pi remove "$package"
+  fi
+done < <(pi list | sed -nE 's/^  ([^[:space:]]+)$/\1/p')
+
+# Keep the subagent list and background-agent widget visible by default.
+node - "$HOME/.pi/agent/subagents.json" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+
+const settingsPath = process.argv[2];
+let settings = {};
+
+try {
+  settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
+
+settings.fleetView = true;
+settings.widgetMode = "background";
+fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+fs.writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
+NODE
 
 # herdr has no installer script, but its CI publishes a prebuilt binary per
 # release - downloading it beats the minutes-long Rust build its flake costs.
