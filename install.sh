@@ -190,6 +190,26 @@ for package in "${PI_PACKAGES[@]}"; do
   pi install "$package"
 done
 
+# Patty hard-codes a shortcut also used by pi-stop. Load it through the local
+# wrapper instead, which keeps Ctrl+Shift+X for stopping Pi and remaps Patty's
+# background-job kill shortcut to Ctrl+Alt+X.
+node - "$HOME/.pi/agent/settings.json" <<'NODE'
+const fs = require("node:fs");
+
+const settingsPath = process.argv[2];
+const settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+
+settings.packages = settings.packages.map((entry) => {
+  const source = typeof entry === "string" ? entry : entry.source;
+  if (source !== "npm:pi-patty-bg-tasks") return entry;
+  return typeof entry === "string"
+    ? { source, extensions: [] }
+    : { ...entry, extensions: [] };
+});
+
+fs.writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
+NODE
+
 is_managed_pi_package() {
   local package
   for package in "${PI_PACKAGES[@]}"; do
