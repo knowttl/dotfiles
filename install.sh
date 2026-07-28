@@ -258,27 +258,6 @@ curl -fsSL -o "$HOME/.local/bin/herdr.tmp" \
 chmod +x "$HOME/.local/bin/herdr.tmp"
 mv "$HOME/.local/bin/herdr.tmp" "$HOME/.local/bin/herdr"
 
-# Install integrations for the agents managed by this repository. These add
-# native lifecycle/session reporting and must run after the herdr binary and
-# agent config directories are available.
-echo "==> installing herdr integrations"
-for integration in pi claude codex opencode; do
-  herdr integration install "$integration"
-done
-
-# A running server keeps serving the old binary's protocol, so every CLI call
-# from the new one fails until it is restarted. The swap is what creates the
-# skew, so say so here - silently upgrading under a live server leaves the
-# fzf keybindings (prefix+a / prefix+s) failing with no visible cause.
-HERDR_VERSION_AFTER="$("$HOME/.local/bin/herdr" --version 2>/dev/null || echo "")"
-if [ -n "$HERDR_VERSION_BEFORE" ] \
-  && [ "$HERDR_VERSION_BEFORE" != "$HERDR_VERSION_AFTER" ] \
-  && pgrep -f 'herdr server' >/dev/null 2>&1; then
-  echo "    upgraded $HERDR_VERSION_BEFORE -> $HERDR_VERSION_AFTER with a server running."
-  echo "    restart herdr to pick it up (this exits every pane process):"
-  echo "      HERDR_SOCKET_PATH=\"\$HOME/.config/herdr/herdr.sock\" herdr server stop"
-fi
-
 # --- 6. Login shell (best effort) -----------------------------------------
 # Only acts if zsh isn't already the login shell. Needs sudo for /etc/shells;
 # skips gracefully with a printed manual command if it can't.
@@ -327,5 +306,25 @@ publish_flake_update() {
 }
 
 publish_flake_update
+
+# Install integrations last so no later installer step can remove or overwrite
+# the generated integration files.
+echo "==> installing herdr integrations"
+for integration in pi claude codex opencode; do
+  herdr integration install "$integration"
+done
+
+# A running server keeps serving the old binary's protocol, so every CLI call
+# from the new one fails until it is restarted. The swap is what creates the
+# skew, so say so here - silently upgrading under a live server leaves the
+# fzf keybindings (prefix+a / prefix+s) failing with no visible cause.
+HERDR_VERSION_AFTER="$("$HOME/.local/bin/herdr" --version 2>/dev/null || echo "")"
+if [ -n "$HERDR_VERSION_BEFORE" ] \
+  && [ "$HERDR_VERSION_BEFORE" != "$HERDR_VERSION_AFTER" ] \
+  && pgrep -f 'herdr server' >/dev/null 2>&1; then
+  echo "    upgraded $HERDR_VERSION_BEFORE -> $HERDR_VERSION_AFTER with a server running."
+  echo "    restart herdr to pick it up (this exits every pane process):"
+  echo "      HERDR_SOCKET_PATH=\"\$HOME/.config/herdr/herdr.sock\" herdr server stop"
+fi
 
 echo "==> done. Open a new terminal for shell/PATH changes to take effect."
