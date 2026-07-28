@@ -66,6 +66,12 @@ Then, now and every time after:
 
 (There's also a `rebuild` shell alias that runs the same script.)
 
+Run `./install.sh --update` to update all flake inputs.
+After a successful update, the installer asks whether to commit and push the
+resulting `flake.lock` change.
+The default is no, and automatic publishing is skipped when `flake.lock` had
+pre-existing changes or the installer is running non-interactively.
+
 On a fresh machine `install.sh`, in order:
 
 1. Installs [Determinate Nix](https://install.determinate.systems) if missing

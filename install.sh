@@ -17,6 +17,7 @@ ZSH_LOCAL="$HOME/.zshrc.local"
 # applying, so the switch below installs the latest packages. A normal run
 # checks for newer inputs and reports when --update is worth running.
 UPDATE=0
+FLAKE_LOCK_WAS_DIRTY=0
 for arg in "$@"; do
   case "$arg" in
     -u|--update) UPDATE=1 ;;
@@ -30,6 +31,11 @@ for arg in "$@"; do
       exit 1 ;;
   esac
 done
+
+if ! git -C "$DIR" diff --quiet -- flake.lock \
+  || ! git -C "$DIR" diff --cached --quiet -- flake.lock; then
+  FLAKE_LOCK_WAS_DIRTY=1
+fi
 
 # --- 1. Nix (Determinate) -------------------------------------------------
 if command -v nix >/dev/null 2>&1; then
@@ -194,5 +200,41 @@ if [ -x "$ZSH_BIN" ] && [ "$CURRENT_SHELL" != "$ZSH_BIN" ]; then
     || echo "    add '$ZSH_BIN' to /etc/shells by hand, then: chsh -s '$ZSH_BIN'"
   chsh -s "$ZSH_BIN" || echo "    run by hand: chsh -s '$ZSH_BIN'"
 fi
+
+publish_flake_update() {
+  [ "$UPDATE" -eq 1 ] || return 0
+
+  if [ "$FLAKE_LOCK_WAS_DIRTY" -eq 1 ]; then
+    echo "==> flake.lock had changes before the update; skipping automatic commit/push"
+    return 0
+  fi
+
+  if git -C "$DIR" diff --quiet -- flake.lock \
+    && git -C "$DIR" diff --cached --quiet -- flake.lock; then
+    echo "==> flake.lock did not change; nothing to commit"
+    return 0
+  fi
+
+  if [ ! -t 0 ] || [ ! -t 1 ]; then
+    echo "==> non-interactive update; skipping automatic commit/push"
+    return 0
+  fi
+
+  printf 'Commit and push the updated flake.lock? [y/N] '
+  read -r answer
+  case "$answer" in
+    y|Y|yes|Yes|YES)
+      git -C "$DIR" add flake.lock
+      git -C "$DIR" commit --only flake.lock -m "Update flake inputs"
+      git -C "$DIR" push
+      echo "==> flake.lock committed and pushed"
+      ;;
+    *)
+      echo "==> leaving flake.lock uncommitted"
+      ;;
+  esac
+}
+
+publish_flake_update
 
 echo "==> done. Open a new terminal for shell/PATH changes to take effect."
