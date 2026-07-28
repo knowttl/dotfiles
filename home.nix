@@ -73,6 +73,11 @@ in
       # (gh-axi, atelier-axi, ...) are on PATH in interactive shells.
       export NVM_DIR="$HOME/.nvm"
       [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+      # Load optional host-specific settings without changing this shared file.
+      if [[ -r "$HOME/.zshrc.local" ]]; then
+        source "$HOME/.zshrc.local"
+      fi
     '';
     shellAliases = {
       ".."     = "cd ..";

@@ -10,6 +10,7 @@ set -euo pipefail
 DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 FLAKE_HOST="default"   # must match flake.nix homeConfigurations.<name>
 TPM_DIR="$HOME/.tmux/plugins/tpm"
+ZSH_LOCAL="$HOME/.zshrc.local"
 
 # --- Arguments ------------------------------------------------------------
 # --update / -u bumps every pinned flake input to its newest version before
@@ -53,6 +54,18 @@ else
   echo "==> cloning TPM"
   # GIT_TERMINAL_PROMPT=0 fails fast instead of prompting for credentials.
   GIT_TERMINAL_PROMPT=0 git clone https://github.com/tmux-plugins/tpm.git "$TPM_DIR"
+fi
+
+# Create a host-local zsh override file without replacing existing settings.
+if [ -e "$ZSH_LOCAL" ] || [ -L "$ZSH_LOCAL" ]; then
+  echo "==> zsh local config present"
+else
+  echo "==> creating $ZSH_LOCAL"
+  printf '%s\n' \
+    '# Host-specific zsh settings.' \
+    '# This file is loaded after the shared Home Manager configuration.' \
+    > "$ZSH_LOCAL"
+  chmod 600 "$ZSH_LOCAL"
 fi
 
 # --- 4. Apply home-manager config -----------------------------------------
