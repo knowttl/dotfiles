@@ -159,6 +159,14 @@ curl -fsSL -o "$HOME/.local/bin/herdr.tmp" \
 chmod +x "$HOME/.local/bin/herdr.tmp"
 mv "$HOME/.local/bin/herdr.tmp" "$HOME/.local/bin/herdr"
 
+# Install integrations for the agents managed by this repository. These add
+# native lifecycle/session reporting and must run after the herdr binary and
+# agent config directories are available.
+echo "==> installing herdr integrations"
+for integration in pi claude codex opencode; do
+  herdr integration install "$integration"
+done
+
 # A running server keeps serving the old binary's protocol, so every CLI call
 # from the new one fails until it is restarted. The swap is what creates the
 # skew, so say so here - silently upgrading under a live server leaves the
