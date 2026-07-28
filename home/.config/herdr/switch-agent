@@ -10,7 +10,7 @@ selected=$(
     jq -r '
       .result.agents[]
       | [
-          .terminal_id,
+          .pane_id,
           (if .focused then "*" else " " end),
           .agent,
           .agent_status,

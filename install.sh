@@ -147,6 +147,7 @@ pi install npm:pi-stop
 pi install npm:pi-effort
 pi install npm:@aliou/pi-processes
 pi install npm:pi-mcp-adapter
+pi install npm:@juicesharp/rpiv-ask-user-question
 
 # herdr has no installer script, but its CI publishes a prebuilt binary per
 # release - downloading it beats the minutes-long Rust build its flake costs.
