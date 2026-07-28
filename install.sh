@@ -14,7 +14,8 @@ ZSH_LOCAL="$HOME/.zshrc.local"
 
 # --- Arguments ------------------------------------------------------------
 # --update / -u bumps every pinned flake input to its newest version before
-# applying, so the switch below installs the latest packages.
+# applying, so the switch below installs the latest packages. A normal run
+# checks for newer inputs and reports when --update is worth running.
 UPDATE=0
 for arg in "$@"; do
   case "$arg" in
@@ -84,10 +85,32 @@ if token=$(gh auth token 2>/dev/null); then
 access-tokens = github.com=$token"
 fi
 
+check_flake_updates() {
+  local check_dir check_lock
+  check_dir="$(mktemp -d)"
+  check_lock="$check_dir/flake.lock"
+
+  if nix flake update --flake "$DIR" --output-lock-file "$check_lock" \
+      >"$check_dir/update.log" 2>&1; then
+    if cmp -s "$DIR/flake.lock" "$check_lock"; then
+      echo "==> flake inputs are up to date"
+    else
+      echo "==> newer flake inputs are available"
+      echo "    run ./install.sh --update to refresh them"
+    fi
+  else
+    echo "==> could not check for newer flake inputs; continuing" >&2
+  fi
+
+  rm -rf "$check_dir"
+}
+
 # With --update, refresh flake.lock first so the switch pulls newest packages.
 if [ "$UPDATE" -eq 1 ]; then
   echo "==> updating flake inputs to newest versions"
   nix flake update --flake "$DIR"
+else
+  check_flake_updates
 fi
 # --impure lets home.nix read USER/HOME from the environment, so the same
 # config applies for any user on any host.
