@@ -257,6 +257,7 @@ PI_PACKAGES=(
   npm:pi-patty-bg-tasks
   npm:pi-mcp-adapter
   npm:pi-lens
+  git:github.com/elidickinson/pi-claude-bridge
   npm:@juicesharp/rpiv-ask-user-question
 )
 
