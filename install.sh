@@ -287,13 +287,22 @@ unset installer_github_token
 unset -f emit_authenticated_github_curl
 echo "==> installing/updating gh-axi"
 npm install --global gh-axi@latest
-echo "==> installing/updating no-mistakes and gh-axi skills"
+echo "==> installing/updating quota-axi"
+npm install --global quota-axi@latest
+echo "==> installing/updating chrome-devtools-axi"
+npm install --global chrome-devtools-axi@latest
+chrome-devtools-axi setup hooks
+echo "==> installing/updating no-mistakes, gh-axi, quota-axi, and chrome-devtools-axi skills"
 # Keep the canonical global skills in ~/.agents/skills and expose them only to
 # Claude Code through ~/.claude/skills. Codex reads the shared global store.
 npx --yes skills add kunchenguid/no-mistakes \
   --skill no-mistakes --global --agent claude-code --yes
 npx --yes skills add kunchenguid/gh-axi \
   --skill gh-axi --global --agent claude-code --yes
+npx --yes skills add kunchenguid/quota-axi \
+  --skill quota-axi --global --agent claude-code --yes
+npx --yes skills add kunchenguid/chrome-devtools-axi \
+  --skill chrome-devtools-axi --global --agent claude-code --yes
 
 echo "==> installing/updating Pi packages"
 PI_PACKAGES=(
@@ -305,6 +314,7 @@ PI_PACKAGES=(
   npm:pi-mcp-adapter
   npm:pi-lens
   npm:pi-claude-bridge
+  npm:@vanillagreen/pi-claude-bridge
   npm:pi-antigravity
   npm:@juicesharp/rpiv-ask-user-question
 )
