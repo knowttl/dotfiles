@@ -138,6 +138,9 @@ fi
 # upstream installers do not use gh authentication, so add it only to their
 # GitHub requests when an active gh token is available.
 export PATH="$HOME/.local/bin:$PATH"
+# Nix's nodejs is immutable, so npm's default global prefix under /nix/store
+# cannot be used for user-installed CLIs.
+export NPM_CONFIG_PREFIX="$HOME/.local"
 installer_github_token="$(gh auth token --hostname github.com 2>/dev/null || true)"
 emit_authenticated_github_curl() {
   cat <<'SH'
