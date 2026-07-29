@@ -150,6 +150,31 @@ curl() {
   fi
   command curl "$@"
 }
+
+uninstall_existing_opencode() {
+  local existing_opencode
+  for existing_opencode in \
+    "$HOME/.local/bin/opencode" \
+    "$HOME/.opencode/bin/opencode"; do
+    if [ -x "$existing_opencode" ]; then
+      "$existing_opencode" uninstall --keep-config --keep-data --force \
+        >/dev/null 2>&1 || true
+    fi
+  done
+
+  npm uninstall --global --prefix "$HOME/.local" opencode-ai \
+    >/dev/null 2>&1 || true
+  npm uninstall --global opencode-ai >/dev/null 2>&1 || true
+  rm -f "$HOME/.local/bin/opencode"
+  rm -rf "$HOME/.opencode"
+}
+
+uninstall_existing_pi() {
+  npm uninstall --global --prefix "$HOME/.local" \
+    @earendil-works/pi-coding-agent >/dev/null 2>&1 || true
+  npm uninstall --global @earendil-works/pi-coding-agent \
+    >/dev/null 2>&1 || true
+}
 SH
 }
 
@@ -163,6 +188,7 @@ echo "==> installing/updating Codex (native installer)"
   curl -fsSL https://chatgpt.com/codex/install.sh
 } | INSTALLER_GITHUB_TOKEN="$installer_github_token" CODEX_NON_INTERACTIVE=1 sh
 echo "==> installing/updating opencode (native installer)"
+uninstall_existing_opencode
 {
   emit_authenticated_github_curl
   curl -fsSL https://opencode.ai/install
@@ -177,6 +203,7 @@ echo "==> installing/updating Pi (native installer)"
 # controlling terminal, so it automatically installs or updates without a prompt.
 export PI_TELEMETRY=0
 export PATH="$HOME/.local/bin:$PATH"
+uninstall_existing_pi
 NPM_CONFIG_PREFIX="$HOME/.local" \
   setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
 
