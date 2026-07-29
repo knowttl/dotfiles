@@ -17,17 +17,20 @@ ZSH_LOCAL="$HOME/.zshrc.local"
 # applying, so the switch below installs the latest packages. A normal run
 # checks for newer inputs and reports when --update is worth running.
 UPDATE=0
+FORCE=0
 FLAKE_LOCK_WAS_DIRTY=0
 for arg in "$@"; do
   case "$arg" in
     -u|--update) UPDATE=1 ;;
+    --force) FORCE=1 ;;
     -h|--help)
-      echo "usage: install.sh [--update]"
+      echo "usage: install.sh [--update] [--force]"
       echo "  --update, -u   update all packages to their newest versions"
+      echo "  --force        reinstall or update native coding agents"
       exit 0 ;;
     *)
       echo "unknown argument: $arg" >&2
-      echo "usage: install.sh [--update]" >&2
+      echo "usage: install.sh [--update] [--force]" >&2
       exit 1 ;;
   esac
 done
@@ -134,6 +137,7 @@ fi
 # GitHub's anonymous API quota is often exhausted on shared networks. Some
 # upstream installers do not use gh authentication, so add it only to their
 # GitHub requests when an active gh token is available.
+export PATH="$HOME/.local/bin:$PATH"
 installer_github_token="$(gh auth token --hostname github.com 2>/dev/null || true)"
 emit_authenticated_github_curl() {
   cat <<'SH'
@@ -151,6 +155,33 @@ curl() {
   command curl "$@"
 }
 SH
+}
+
+version_from_command() {
+  "$1" --version 2>/dev/null \
+    | sed -nE 's/.*([0-9]+\.[0-9]+\.[0-9]+).*/\1/p' \
+    | head -1
+}
+
+agent_needs_install() {
+  local label="$1" current="$2" latest="$3"
+
+  if [ "$FORCE" -eq 1 ]; then
+    echo "==> forcing install/update of $label"
+    return 0
+  fi
+
+  if [ -n "$current" ] && [ -n "$latest" ] && [ "$current" = "$latest" ]; then
+    echo "==> $label is current ($current); skipping install/update"
+    return 1
+  fi
+
+  if [ -n "$current" ] && [ -n "$latest" ]; then
+    echo "==> updating $label ($current -> $latest)"
+  else
+    echo "==> could not confirm the current/latest $label version; installing/updating"
+  fi
+  return 0
 }
 
 uninstall_existing_opencode() {
@@ -178,34 +209,51 @@ uninstall_existing_pi() {
     >/dev/null 2>&1 || true
 }
 
-echo "==> installing/updating Claude Code (native installer)"
-curl -fsSL https://claude.ai/install.sh | bash
-echo "==> installing/updating Codex (native installer)"
-# CODEX_NON_INTERACTIVE answers "no" to the installer's /dev/tty prompts
-# ("Start Codex now?"), which would otherwise hang the script mid-install.
-{
-  emit_authenticated_github_curl
-  curl -fsSL https://chatgpt.com/codex/install.sh
-} | INSTALLER_GITHUB_TOKEN="$installer_github_token" CODEX_NON_INTERACTIVE=1 sh
-echo "==> installing/updating opencode (native installer)"
-uninstall_existing_opencode
-{
-  emit_authenticated_github_curl
-  curl -fsSL https://opencode.ai/install
-} | INSTALLER_GITHUB_TOKEN="$installer_github_token" bash -s -- --no-modify-path
-mkdir -p "$HOME/.local/bin"
-if [ -e "$HOME/.opencode/bin/opencode" ]; then
-  mv "$HOME/.opencode/bin/opencode" "$HOME/.local/bin/opencode"
-  rmdir "$HOME/.opencode/bin" 2>/dev/null || true
+CLAUDE_CURRENT_VERSION="$(version_from_command claude || true)"
+CLAUDE_LATEST_VERSION="$(curl -fsSL https://downloads.claude.ai/claude-code-releases/latest 2>/dev/null || true)"
+if agent_needs_install "Claude Code" "$CLAUDE_CURRENT_VERSION" "$CLAUDE_LATEST_VERSION"; then
+  curl -fsSL https://claude.ai/install.sh | bash
 fi
-echo "==> installing/updating Pi (native installer)"
-# Pi's installer uses /dev/tty for its action menu. A new session has no
-# controlling terminal, so it automatically installs or updates without a prompt.
-export PI_TELEMETRY=0
-export PATH="$HOME/.local/bin:$PATH"
-uninstall_existing_pi
-NPM_CONFIG_PREFIX="$HOME/.local" \
-  setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
+
+CODEX_CURRENT_VERSION="$(version_from_command codex || true)"
+CODEX_LATEST_VERSION="$(curl -fsSL https://releases.openai.com/codex/channels/latest 2>/dev/null \
+  | sed -n 's#.*releases/\([^/]\+\)/.*#\1#p' | head -1 || true)"
+if agent_needs_install "Codex" "$CODEX_CURRENT_VERSION" "$CODEX_LATEST_VERSION"; then
+  # CODEX_NON_INTERACTIVE answers "no" to the installer's /dev/tty prompts
+  # ("Start Codex now?"), which would otherwise hang the script mid-install.
+  {
+    emit_authenticated_github_curl
+    curl -fsSL https://chatgpt.com/codex/install.sh
+  } | INSTALLER_GITHUB_TOKEN="$installer_github_token" CODEX_NON_INTERACTIVE=1 sh
+fi
+
+OPENCODE_CURRENT_VERSION="$(version_from_command opencode || true)"
+OPENCODE_LATEST_VERSION="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+  https://github.com/anomalyco/opencode/releases/latest 2>/dev/null \
+  | sed -n 's#.*/v\([^/]*\)$#\1#p' || true)"
+if agent_needs_install "OpenCode" "$OPENCODE_CURRENT_VERSION" "$OPENCODE_LATEST_VERSION"; then
+  uninstall_existing_opencode
+  {
+    emit_authenticated_github_curl
+    curl -fsSL https://opencode.ai/install
+  } | INSTALLER_GITHUB_TOKEN="$installer_github_token" bash -s -- --no-modify-path
+  mkdir -p "$HOME/.local/bin"
+  if [ -e "$HOME/.opencode/bin/opencode" ]; then
+    mv "$HOME/.opencode/bin/opencode" "$HOME/.local/bin/opencode"
+    rmdir "$HOME/.opencode/bin" 2>/dev/null || true
+  fi
+fi
+
+PI_CURRENT_VERSION="$(version_from_command pi || true)"
+PI_LATEST_VERSION="$(npm view @earendil-works/pi-coding-agent version 2>/dev/null || true)"
+if agent_needs_install "Pi" "$PI_CURRENT_VERSION" "$PI_LATEST_VERSION"; then
+  # Pi's installer uses /dev/tty for its action menu. A new session has no
+  # controlling terminal, so it automatically installs or updates without a prompt.
+  export PI_TELEMETRY=0
+  uninstall_existing_pi
+  NPM_CONFIG_PREFIX="$HOME/.local" \
+    setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
+fi
 
 echo "==> installing/updating no-mistakes"
 if command -v no-mistakes >/dev/null 2>&1; then
