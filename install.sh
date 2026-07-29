@@ -150,6 +150,8 @@ curl() {
   fi
   command curl "$@"
 }
+SH
+}
 
 uninstall_existing_opencode() {
   local existing_opencode
@@ -174,8 +176,6 @@ uninstall_existing_pi() {
     @earendil-works/pi-coding-agent >/dev/null 2>&1 || true
   npm uninstall --global @earendil-works/pi-coding-agent \
     >/dev/null 2>&1 || true
-}
-SH
 }
 
 echo "==> installing/updating Claude Code (native installer)"
