@@ -316,6 +316,7 @@ PI_PACKAGES=(
   npm:pi-claude-bridge
   npm:@vanillagreen/pi-claude-bridge
   npm:pi-antigravity
+  npm:@juanibiapina/pi-extension-settings
   npm:@juicesharp/rpiv-ask-user-question
 )
 
