@@ -166,13 +166,19 @@ echo "==> installing/updating opencode (native installer)"
 {
   emit_authenticated_github_curl
   curl -fsSL https://opencode.ai/install
-} | INSTALLER_GITHUB_TOKEN="$installer_github_token" bash
+} | INSTALLER_GITHUB_TOKEN="$installer_github_token" bash -s -- --no-modify-path
+mkdir -p "$HOME/.local/bin"
+if [ -e "$HOME/.opencode/bin/opencode" ]; then
+  mv "$HOME/.opencode/bin/opencode" "$HOME/.local/bin/opencode"
+  rmdir "$HOME/.opencode/bin" 2>/dev/null || true
+fi
 echo "==> installing/updating Pi (native installer)"
 # Pi's installer uses /dev/tty for its action menu. A new session has no
 # controlling terminal, so it automatically installs or updates without a prompt.
 export PI_TELEMETRY=0
-setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
 export PATH="$HOME/.local/bin:$PATH"
+NPM_CONFIG_PREFIX="$HOME/.local" \
+  setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
 
 echo "==> installing/updating no-mistakes"
 if command -v no-mistakes >/dev/null 2>&1; then
@@ -223,6 +229,7 @@ PI_PACKAGES=(
   npm:pi-effort
   npm:pi-patty-bg-tasks
   npm:pi-mcp-adapter
+  npm:pi-lens
   npm:@juicesharp/rpiv-ask-user-question
 )
 

@@ -58,9 +58,8 @@ in
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
   home.sessionVariables.PI_TELEMETRY = "0";
-  # ~/.local/bin: claude-code + codex native installs; ~/.opencode/bin: opencode
-  # native install (its installer uses its own dir). See install.sh.
-  home.sessionPath = [ "$HOME/.local/bin" "$HOME/.opencode/bin" ];
+  # Native coding-agent installs live in ~/.local/bin. See install.sh.
+  home.sessionPath = [ "$HOME/.local/bin" ];
 
   # ---- Shell ---------------------------------------------------------------
   programs.zsh = {
