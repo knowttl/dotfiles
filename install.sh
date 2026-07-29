@@ -86,7 +86,7 @@ export NIX_CONFIG="experimental-features = nix-command flakes"
 # Authenticate Nix's GitHub API calls when gh is logged in, lifting the
 # 60/hour anonymous rate limit (flake inputs resolve via api.github.com).
 # Skips silently on hosts where gh is absent or not yet authenticated.
-if token=$(gh auth token 2>/dev/null); then
+if token=$(gh auth token --hostname github.com 2>/dev/null); then
   NIX_CONFIG="$NIX_CONFIG
 access-tokens = github.com=$token"
 fi
@@ -131,14 +131,42 @@ fi
 # Installed outside Nix so each tool's built-in auto-updater can keep it on the
 # latest release; nixpkgs lags too far behind. The installers are idempotent
 # and upgrade in place, so re-running just refreshes to newest.
+# GitHub's anonymous API quota is often exhausted on shared networks. Some
+# upstream installers do not use gh authentication, so add it only to their
+# GitHub requests when an active gh token is available.
+installer_github_token="$(gh auth token --hostname github.com 2>/dev/null || true)"
+emit_authenticated_github_curl() {
+  cat <<'SH'
+curl() {
+  if [ -n "$INSTALLER_GITHUB_TOKEN" ]; then
+    for argument in "$@"; do
+      case "$argument" in
+        https://api.github.com/* | https://github.com/*)
+          command curl --header "Authorization: Bearer $INSTALLER_GITHUB_TOKEN" "$@"
+          return
+          ;;
+      esac
+    done
+  fi
+  command curl "$@"
+}
+SH
+}
+
 echo "==> installing/updating Claude Code (native installer)"
 curl -fsSL https://claude.ai/install.sh | bash
 echo "==> installing/updating Codex (native installer)"
 # CODEX_NON_INTERACTIVE answers "no" to the installer's /dev/tty prompts
 # ("Start Codex now?"), which would otherwise hang the script mid-install.
-curl -fsSL https://chatgpt.com/codex/install.sh | CODEX_NON_INTERACTIVE=1 sh
+{
+  emit_authenticated_github_curl
+  curl -fsSL https://chatgpt.com/codex/install.sh
+} | INSTALLER_GITHUB_TOKEN="$installer_github_token" CODEX_NON_INTERACTIVE=1 sh
 echo "==> installing/updating opencode (native installer)"
-curl -fsSL https://opencode.ai/install | bash
+{
+  emit_authenticated_github_curl
+  curl -fsSL https://opencode.ai/install
+} | INSTALLER_GITHUB_TOKEN="$installer_github_token" bash
 echo "==> installing/updating Pi (native installer)"
 # Pi's installer uses /dev/tty for its action menu. A new session has no
 # controlling terminal, so it automatically installs or updates without a prompt.
@@ -151,19 +179,31 @@ if command -v no-mistakes >/dev/null 2>&1; then
   no_mistakes_update_output=""
   if ! no_mistakes_update_output="$(no-mistakes update --yes 2>&1)"; then
     printf '%s\n' "$no_mistakes_update_output"
-    if ! printf '%s\n' "$no_mistakes_update_output" \
+    if printf '%s\n' "$no_mistakes_update_output" \
       | grep -q 'active pipeline runs'; then
+      echo "    daemon restart deferred while a pipeline is active"
+    elif printf '%s\n' "$no_mistakes_update_output" \
+      | grep -Eq 'fetch latest release: unexpected status (403|429)'; then
+      echo "    update skipped: the updater does not support authenticated GitHub requests"
+    else
       exit 1
     fi
-    echo "    daemon restart deferred while a pipeline is active"
   else
     printf '%s\n' "$no_mistakes_update_output"
   fi
 else
-  curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh | sh
+  {
+    emit_authenticated_github_curl
+    curl -fsSL https://raw.githubusercontent.com/kunchenguid/no-mistakes/main/docs/install.sh
+  } | INSTALLER_GITHUB_TOKEN="$installer_github_token" sh
 fi
 echo "==> installing/updating treehouse"
-curl -fsSL https://kunchenguid.github.io/treehouse/install.sh | sh
+{
+  emit_authenticated_github_curl
+  curl -fsSL https://kunchenguid.github.io/treehouse/install.sh
+} | INSTALLER_GITHUB_TOKEN="$installer_github_token" sh
+unset installer_github_token
+unset -f emit_authenticated_github_curl
 echo "==> installing/updating gh-axi"
 npm install --global gh-axi@latest
 echo "==> installing/updating no-mistakes and gh-axi skills"
