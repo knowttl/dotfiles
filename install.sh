@@ -257,6 +257,7 @@ PI_PACKAGES=(
   npm:pi-mcp-adapter
   npm:pi-lens
   npm:pi-claude-bridge
+  npm:pi-antigravity
   npm:@juicesharp/rpiv-ask-user-question
 )
 
