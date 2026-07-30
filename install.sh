@@ -295,7 +295,7 @@ npm install --global quota-axi@latest
 echo "==> installing/updating chrome-devtools-axi"
 npm install --global chrome-devtools-axi@latest
 chrome-devtools-axi setup hooks
-echo "==> installing/updating no-mistakes, gh-axi, quota-axi, and chrome-devtools-axi skills"
+echo "==> installing/updating no-mistakes, gh-axi, quota-axi, chrome-devtools-axi, and atelier skills"
 # Keep the canonical global skills in ~/.agents/skills and expose them only to
 # Claude Code through ~/.claude/skills. Codex reads the shared global store.
 npx --yes skills add kunchenguid/no-mistakes \
@@ -306,6 +306,8 @@ npx --yes skills add kunchenguid/quota-axi \
   --skill quota-axi --global --agent claude-code --yes
 npx --yes skills add kunchenguid/chrome-devtools-axi \
   --skill chrome-devtools-axi --global --agent claude-code --yes
+npx --yes skills add knowttl/atelier-axi \
+  --skill atelier --global --agent claude-code --yes
 
 echo "==> installing/updating Pi packages"
 PI_PACKAGES=(
@@ -361,6 +363,85 @@ settings.fleetView = true;
 settings.widgetMode = "background";
 fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
 fs.writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
+NODE
+
+# Trust new Pi project locations by default.
+node - "$HOME/.pi/agent/settings.json" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+
+const settingsPath = process.argv[2];
+let settings = {};
+
+try {
+  settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
+
+settings.defaultProjectTrust = "always";
+fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+fs.writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
+NODE
+
+# Install agent statusline defaults without taking ownership of local config.
+CLAUDE_STATUSLINE_COMMAND="$HOME/.claude/statusline-command.sh"
+if [ ! -e "$CLAUDE_STATUSLINE_COMMAND" ]; then
+  mkdir -p "$HOME/.claude"
+  install -m 755 "$DIR/home/claude-statusline-command.sh" \
+    "$CLAUDE_STATUSLINE_COMMAND"
+fi
+
+node - "$HOME/.codex/config.toml" "$HOME/.claude/settings.json" <<'NODE'
+const fs = require("node:fs");
+const path = require("node:path");
+
+const codexConfigPath = process.argv[2];
+const claudeSettingsPath = process.argv[3];
+const codexStatusLine = [
+  'status_line = ["model-with-reasoning", "current-dir", "git-branch", "permissions", "context-used", "five-hour-limit", "weekly-limit"]',
+  "status_line_use_colors = true",
+];
+
+let codexConfig = "";
+try {
+  codexConfig = fs.readFileSync(codexConfigPath, "utf8");
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
+
+if (!/^\s*status_line\s*=/m.test(codexConfig)) {
+  const additions = codexStatusLine.filter(
+    (line) => !new RegExp("^\\s*" + line.split(" ")[0] + "\\s*=", "m").test(codexConfig),
+  );
+  const tuiHeader = /(^\[tui\]\s*$)/m;
+  if (tuiHeader.test(codexConfig)) {
+    codexConfig = codexConfig.replace(
+      tuiHeader,
+      "$1\n" + additions.join("\n"),
+    );
+  } else {
+    codexConfig = codexConfig.replace(/\s*$/, "") + "\n\n[tui]\n" + additions.join("\n") + "\n";
+  }
+  fs.mkdirSync(path.dirname(codexConfigPath), { recursive: true });
+  fs.writeFileSync(codexConfigPath, codexConfig);
+}
+
+let claudeSettings = {};
+try {
+  claudeSettings = JSON.parse(fs.readFileSync(claudeSettingsPath, "utf8"));
+} catch (error) {
+  if (error.code !== "ENOENT") throw error;
+}
+
+if (!Object.hasOwn(claudeSettings, "statusLine")) {
+  claudeSettings.statusLine = {
+    command: "zsh ~/.claude/statusline-command.sh",
+    type: "command",
+  };
+  fs.mkdirSync(path.dirname(claudeSettingsPath), { recursive: true });
+  fs.writeFileSync(claudeSettingsPath, JSON.stringify(claudeSettings, null, 2) + "\n");
+}
 NODE
 
 # herdr has no installer script, but its CI publishes a prebuilt binary per
