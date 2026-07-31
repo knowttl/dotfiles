@@ -69,6 +69,30 @@ in
     initContent = ''
       bindkey '^f' autosuggest-accept
 
+      # zsh picks vi mode on its own because EDITOR contains "vi" (nvim). Keep
+      # it, but teach it the keys it does not know by default.
+
+      # ctrl+arrow. Without these the terminal's ^[[1;5C/D is unmatched, zsh
+      # falls back to the bare ^[ (vi-cmd-mode) and reads the tail as vi
+      # commands - the trailing C/D then kill to end of line.
+      bindkey '^[[1;5C' forward-word
+      bindkey '^[[1;5D' backward-word
+
+      # Quote/bracket text objects (di", ci', da(, yi{, ...). zsh ships these
+      # functions but binds neither, to avoid claiming keys users may have
+      # bound themselves. Word objects (iw/aw/ia) are bound by default already.
+      autoload -Uz select-quoted select-bracketed
+      zle -N select-quoted
+      zle -N select-bracketed
+      for km in viopp visual; do
+        for c in {a,i}''${(s..)^:-\'\"\`}; do
+          bindkey -M $km $c select-quoted
+        done
+        for c in {a,i}''${(s..)^:-'()[]{}<>bB'}; do
+          bindkey -M $km $c select-bracketed
+        done
+      done
+
       # Load nvm so npm-global CLIs installed under nvm's node
       # (gh-axi, atelier-axi, ...) are on PATH in interactive shells.
       export NVM_DIR="$HOME/.nvm"
