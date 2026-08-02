@@ -323,6 +323,7 @@ PI_PACKAGES=(
   npm:pi-antigravity
   npm:@juanibiapina/pi-extension-settings
   npm:@juicesharp/rpiv-ask-user-question
+  git:github.com/algal/pi-openai-server-compaction
 )
 
 for package in "${PI_PACKAGES[@]}"; do
@@ -380,6 +381,13 @@ try {
 }
 
 settings.defaultProjectTrust = "always";
+settings.images = { ...(settings.images ?? {}), blockImages: false };
+settings.terminal = { ...(settings.terminal ?? {}), showImages: false };
+settings.hideThinkingBlock = true;
+settings.quietStartup = true;
+settings.steeringMode = "all";
+settings.followUpMode = "all";
+settings.collapseChangelog = true;
 fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
 fs.writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
 NODE
