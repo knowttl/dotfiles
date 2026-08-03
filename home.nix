@@ -195,6 +195,8 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/keybindings.json";
   home.file.".pi/agent/models.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/models.json";
+  home.file.".pi/agent/extensions/terminal-status-title.js".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/extensions/terminal-status-title.js";
   home.file.".pi-lens/config.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi-lens/config.json";
   home.file.".tmux.conf".source =

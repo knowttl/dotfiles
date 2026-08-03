@@ -7,6 +7,8 @@ You MUST follow these rules.
 - State assumptions. If uncertain, STOP and ask.
 - Present all interpretations - NEVER pick one silently.
 - Propose simpler alternatives when they exist.
+- For one-off or infrequent operational work, start with the simplest direct end-to-end path. Do not build wrappers, control planes, policy layers, custom verifiers, or automation unless the direct path exposes a concrete blocker or repeated need that justifies the added machinery.
+- Before using "dynamic workflows", "ultra code" or any harness feature that immediately spawns a large swarm of subagents, always explain the tradeoffs and ask the user for explicit approval.
 
 ### 2. Write the Minimum
 
@@ -27,6 +29,7 @@ You MUST follow these rules.
 
 - Turn tasks into verifiable E2E goals. Loop until they pass.
 - Test E2E as a real user would. Be picky about UI and pixel perfection - fix obvious issues even if unrelated.
+- When doing bug fixes, always start by reproducing the bug in an E2E setting as closely aligned with how an end user would experience it as possible.
 - For multi-step work, state a plan: `1. [Step] -> verify: [check]`.
 
 ### 5. Write for Local Reasoning
