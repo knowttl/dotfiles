@@ -88,6 +88,13 @@ in
       bindkey '^[[1;5C' forward-word
       bindkey '^[[1;5D' backward-word
 
+      # Backspace in insert mode. zsh's vi default (vi-backward-delete-char)
+      # refuses to delete past the point where you entered insert mode, so
+      # after moving in cmd mode and pressing i/a, backspace appears frozen.
+      # backward-delete-char deletes freely, matching bash/readline vi-mode.
+      bindkey -M viins '^?' backward-delete-char
+      bindkey -M viins '^H' backward-delete-char
+
       # Quote/bracket text objects (di", ci', da(, yi{, ...). zsh ships these
       # functions but binds neither, to avoid claiming keys users may have
       # bound themselves. Word objects (iw/aw/ia) are bound by default already.
@@ -107,6 +114,20 @@ in
       # (gh-axi, atelier-axi, ...) are on PATH in interactive shells.
       export NVM_DIR="$HOME/.nvm"
       [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
+
+      # Load conda if this host has it installed under ~. Sourcing conda.sh is
+      # conda's own documented equivalent of `conda init`, so `conda activate`
+      # works without ever running `conda init` - which matters because it
+      # targets the read-only ~/.zshrc and gets wiped on every switch. The file
+      # guard keeps this a no-op on hosts without conda, so the shared config
+      # stays portable. Add new install paths to the list if needed.
+      for conda_base in "$HOME/miniforge3" "$HOME/miniconda3" "$HOME/anaconda3"; do
+        if [ -f "$conda_base/etc/profile.d/conda.sh" ]; then
+          . "$conda_base/etc/profile.d/conda.sh"
+          break
+        fi
+      done
+      unset conda_base
 
       # Load optional host-specific settings without changing this shared file.
       if [[ -r "$HOME/.zshrc.local" ]]; then
