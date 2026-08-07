@@ -118,7 +118,17 @@ in
     };
   };
 
-  programs.dircolors.enable = true;
+  programs.dircolors = {
+    enable = true;
+    # GNU's default paints directories bold blue (01;34), which is hard to read
+    # on the rose-pine-moon background. Override just directories and symlinks
+    # to readable rose-pine tones (foam / iris) so ls matches the starship
+    # prompt; every other entry stays at the module's mkDefault values.
+    settings = {
+      DIR  = "1;38;2;156;207;216"; # foam
+      LINK = "1;38;2;196;167;231"; # iris
+    };
+  };
 
   programs.git = {
     enable = true;
