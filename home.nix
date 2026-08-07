@@ -66,6 +66,16 @@ in
     enable = true;
     autosuggestion.enable = true;      # ghost text from history
     syntaxHighlighting.enable = true;  # commands turn green when valid
+
+    # Both of these default to false in home-manager, and both are wrong when
+    # many shells run at once (herdr keeps a shell per pane). With append off,
+    # every exiting shell rewrites the whole history file from its own
+    # in-memory list instead of appending, so a stale pane can drop lines other
+    # panes already wrote. With extended off, that rewrite also strips the
+    # timestamps SHARE_HISTORY needs to merge entries across shells correctly.
+    history.append = true;
+    history.extended = true;
+
     initContent = ''
       bindkey '^f' autosuggest-accept
 
@@ -115,6 +125,22 @@ in
       la       = "ls --color=auto -lha";
       grep     = "grep --color=auto";
       diff     = "diff --color=auto";
+    };
+  };
+
+  # Shell history in SQLite, written synchronously per command. Unlike the flat
+  # ~/.zsh_history file it has no whole-file rewrite, so concurrent herdr panes
+  # cannot clobber each other's entries. zsh keeps writing its own history too;
+  # atuin is the searchable record on top of it.
+  programs.atuin = {
+    enable = true;   # enableZshIntegration defaults to true
+    # Leave Up as plain zsh prefix search so autosuggestions stay predictable.
+    # ctrl-r opens atuin.
+    flags = [ "--disable-up-arrow" ];
+    settings = {
+      search_mode = "fuzzy";
+      auto_sync = false;     # local only, no atuin account
+      update_check = false;
     };
   };
 
