@@ -442,11 +442,25 @@ try {
   if (error.code !== "ENOENT") throw error;
 }
 
+let claudeSettingsChanged = false;
+
 if (!Object.hasOwn(claudeSettings, "statusLine")) {
   claudeSettings.statusLine = {
     command: "zsh ~/.claude/statusline-command.sh",
     type: "command",
   };
+  claudeSettingsChanged = true;
+}
+
+// Default every session to --dangerously-skip-permissions. Respected if a
+// prior run (or the user) already set permissions.defaultMode explicitly.
+claudeSettings.permissions ??= {};
+if (!Object.hasOwn(claudeSettings.permissions, "defaultMode")) {
+  claudeSettings.permissions.defaultMode = "bypassPermissions";
+  claudeSettingsChanged = true;
+}
+
+if (claudeSettingsChanged) {
   fs.mkdirSync(path.dirname(claudeSettingsPath), { recursive: true });
   fs.writeFileSync(claudeSettingsPath, JSON.stringify(claudeSettings, null, 2) + "\n");
 }

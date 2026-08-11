@@ -10,13 +10,13 @@ used=$(echo "$input" | jq -r '.context_window.used_percentage // empty')
 five_hour=$(echo "$input" | jq -r '.rate_limits.five_hour.used_percentage // empty')
 seven_day=$(echo "$input" | jq -r '.rate_limits.seven_day.used_percentage // empty')
 
-# ANSI colors (dim, since the footer renders dimmed)
-C_MODEL='\033[2;36m'   # dim cyan
-C_EFFORT='\033[2;34m'  # dim blue
-C_BAR='\033[2;33m'     # dim yellow
-C_RATE='\033[2;35m'    # dim magenta
-C_BRANCH='\033[2;32m'  # dim green
-C_DIRTY='\033[2;31m'   # dim red
+# ANSI colors (bold+bright, for visibility against a dark terminal theme)
+C_MODEL='\033[1;96m'   # bright cyan
+C_EFFORT='\033[1;94m'  # bright blue
+C_BAR='\033[1;93m'     # bright yellow
+C_RATE='\033[1;95m'    # bright magenta
+C_BRANCH='\033[1;92m'  # bright green
+C_DIRTY='\033[1;91m'   # bright red
 C_RESET='\033[0m'
 
 # --- Context window usage bar ---
