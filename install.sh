@@ -317,7 +317,7 @@ PI_PACKAGES=(
   npm:pi-stop
   npm:pi-effort
   npm:pi-mcp-adapter
-  npm:pi-lens
+  npm:pi-smart-compact
   npm:pi-claude-bridge
   npm:@vanillagreen/pi-claude-bridge
   npm:pi-antigravity
@@ -388,6 +388,13 @@ settings.quietStartup = true;
 settings.steeringMode = "all";
 settings.followUpMode = "all";
 settings.collapseChangelog = true;
+// pi-smart-compact: auto-compact context hands-off at 75% usage.
+settings.smartCompact = {
+  ...(settings.smartCompact ?? {}),
+  autoTrigger: true,
+  requireApproval: false,
+  minContextPercent: 75,
+};
 fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
 fs.writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
 NODE
