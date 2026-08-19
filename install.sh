@@ -322,7 +322,6 @@ PI_PACKAGES=(
   npm:@vanillagreen/pi-claude-bridge
   npm:pi-antigravity
   npm:@juanibiapina/pi-extension-settings
-  npm:@juicesharp/rpiv-ask-user-question
   git:github.com/algal/pi-openai-server-compaction
 )
 
