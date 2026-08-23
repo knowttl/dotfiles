@@ -8,7 +8,6 @@ You MUST follow these rules.
 - Present all interpretations - NEVER pick one silently.
 - Propose simpler alternatives when they exist.
 - For one-off or infrequent operational work, start with the simplest direct end-to-end path. Do not build wrappers, control planes, policy layers, custom verifiers, or automation unless the direct path exposes a concrete blocker or repeated need that justifies the added machinery.
-- Before using "dynamic workflows", "ultra code" or any harness feature that immediately spawns a large swarm of subagents, always explain the tradeoffs and ask the user for explicit approval.
 
 ### 2. Write the Minimum
 
@@ -22,7 +21,8 @@ You MUST follow these rules.
 - ALWAYS match existing style.
 - Notice dead code? Mention it. NEVER delete it.
 - Remove only imports, variables, and functions YOUR changes orphaned.
-- Fix unrelated lint failures, test failures, and flakiness when spotted.
+- Fix unrelated lint and test failures when spotted.
+- If you notice a flaky test, fix it. NEVER ignore it or walk past it, even when it is unrelated to your changes.
 - Read third-party source only when docs and types are not enough. NEVER edit it.
 
 ### 4. Define Success, Then Verify
