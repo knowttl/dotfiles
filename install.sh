@@ -387,10 +387,11 @@ settings.quietStartup = true;
 settings.steeringMode = "all";
 settings.followUpMode = "all";
 settings.collapseChangelog = true;
-// pi-smart-compact: auto-compact context hands-off at 75% usage.
+// pi-smart-compact: request compaction once an idle session reaches 75% usage.
 settings.smartCompact = {
   ...(settings.smartCompact ?? {}),
   autoTrigger: true,
+  autoTriggerStrategy: "settled",
   requireApproval: false,
   minContextPercent: 75,
 };
