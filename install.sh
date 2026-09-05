@@ -317,8 +317,6 @@ PI_PACKAGES=(
   npm:pi-stop
   npm:pi-mcp-adapter
   npm:pi-smart-compact
-  npm:pi-claude-bridge
-  npm:@vanillagreen/pi-claude-bridge
   npm:pi-antigravity
   npm:@juanibiapina/pi-extension-settings
   git:github.com/algal/pi-openai-server-compaction
