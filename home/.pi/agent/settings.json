@@ -1,0 +1,37 @@
+{
+  "packages": [
+    "npm:@tintinweb/pi-subagents",
+    "npm:pi-web-access",
+    "npm:@ff-labs/pi-fff",
+    "npm:pi-stop",
+    "npm:pi-mcp-adapter",
+    "npm:pi-antigravity",
+    "npm:@juanibiapina/pi-extension-settings",
+    "git:github.com/algal/pi-openai-server-compaction",
+    "npm:pi-smart-compact",
+    "npm:pi-meta-oauth"
+  ],
+  "defaultProjectTrust": "always",
+  "lastChangelogVersion": "0.85.0",
+  "images": {
+    "blockImages": false
+  },
+  "terminal": {
+    "showImages": false
+  },
+  "hideThinkingBlock": true,
+  "quietStartup": true,
+  "steeringMode": "all",
+  "followUpMode": "all",
+  "collapseChangelog": true,
+  "smartCompact": {
+    "autoTrigger": true,
+    "autoTriggerStrategy": "settled",
+    "requireApproval": false,
+    "minContextPercent": 75
+  },
+  "defaultProvider": "opencode-go",
+  "defaultModel": "kimi-k3",
+  "defaultThinkingLevel": "max",
+  "theme": "dark"
+}
