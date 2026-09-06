@@ -70,6 +70,11 @@ config.window_padding = {
 }
 config.keys = {
   {
+    key = 'Enter',
+    mods = 'ALT',
+    action = wezterm.action.DisableDefaultAssignment,
+  },
+  {
     key = 'Backspace',
     mods = 'CTRL',
     action = wezterm.action.SendString '\x17',
