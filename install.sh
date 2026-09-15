@@ -384,13 +384,13 @@ settings.quietStartup = true;
 settings.steeringMode = "all";
 settings.followUpMode = "all";
 settings.collapseChangelog = true;
-// pi-smart-compact: request compaction once an idle session reaches 75% usage.
+// pi-smart-compact: request compaction once an idle session reaches 95% usage.
 settings.smartCompact = {
   ...(settings.smartCompact ?? {}),
   autoTrigger: true,
   autoTriggerStrategy: "settled",
   requireApproval: false,
-  minContextPercent: 75,
+  minContextPercent: 95,
 };
 fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
 fs.writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);

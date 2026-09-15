@@ -13,7 +13,7 @@
     "npm:pi-background-tasks"
   ],
   "defaultProjectTrust": "always",
-  "lastChangelogVersion": "0.85.0",
+  "lastChangelogVersion": "0.85.1",
   "images": {
     "blockImages": false
   },
@@ -29,7 +29,7 @@
     "autoTrigger": true,
     "autoTriggerStrategy": "settled",
     "requireApproval": false,
-    "minContextPercent": 75
+    "minContextPercent": 95
   },
   "defaultProvider": "opencode-go",
   "defaultModel": "kimi-k3",
