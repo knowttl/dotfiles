@@ -295,7 +295,7 @@ npm install --global quota-axi@latest
 echo "==> installing/updating chrome-devtools-axi"
 npm install --global chrome-devtools-axi@latest
 chrome-devtools-axi setup hooks
-echo "==> installing/updating no-mistakes, gh-axi, quota-axi, chrome-devtools-axi, and atelier skills"
+echo "==> installing/updating no-mistakes, gh-axi, quota-axi, chrome-devtools-axi, and lavish skills"
 # Keep the canonical global skills in ~/.agents/skills and expose them only to
 # Claude Code through ~/.claude/skills. Codex reads the shared global store.
 npx --yes skills add kunchenguid/no-mistakes \
@@ -306,8 +306,8 @@ npx --yes skills add kunchenguid/quota-axi \
   --skill quota-axi --global --agent claude-code --yes
 npx --yes skills add kunchenguid/chrome-devtools-axi \
   --skill chrome-devtools-axi --global --agent claude-code --yes
-npx --yes skills add knowttl/atelier-axi \
-  --skill atelier --global --agent claude-code --yes
+npx --yes skills add kunchenguid/lavish-axi \
+  --skill lavish --global --agent claude-code --yes
 
 echo "==> installing/updating Pi packages"
 PI_PACKAGES=(

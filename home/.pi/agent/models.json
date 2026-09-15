@@ -29,6 +29,12 @@
         },
         "gpt-6-astra": {
           "contextWindow": 272000
+        },
+        "grok-4.5": {
+          "contextWindow": 200000
+        },
+        "grok-4-5": {
+          "contextWindow": 200000
         }
       }
     }
