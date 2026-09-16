@@ -319,6 +319,7 @@ PI_PACKAGES=(
   npm:pi-smart-compact
   npm:pi-antigravity
   npm:@juanibiapina/pi-extension-settings
+  npm:pi-meta-oauth
   git:github.com/algal/pi-openai-server-compaction
 )
 
