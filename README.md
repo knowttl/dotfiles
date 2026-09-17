@@ -151,6 +151,13 @@ image and herdr config) into the Windows home dir, and skips Linux-only files
 like `.tmux.conf`. Windows may require Developer Mode or an elevated shell for
 symlinks; the installer falls back to hard links otherwise.
 
+It also merges WezTerm-matching tab keybindings from
+`home/.config/windows-terminal/keybindings.json` into any found Windows Terminal
+`settings.json` (Store, Preview, and unpackaged paths).
+Open Windows Terminal once first so `settings.json` exists, then re-run the
+installer. `node` is required for that merge because Terminal settings may be
+JSONC.
+
 ## Notes
 
 - The first time you launch `nvim`, it bootstraps

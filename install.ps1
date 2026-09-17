@@ -256,9 +256,58 @@ function Install-Dotfiles {
   }
 }
 
+function Get-WindowsTerminalSettingsPaths {
+  $localAppData = $env:LOCALAPPDATA
+  if ([string]::IsNullOrWhiteSpace($localAppData)) {
+    return @()
+  }
+
+  return @(
+    (Join-Path $localAppData 'Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState\settings.json'),
+    (Join-Path $localAppData 'Packages\Microsoft.WindowsTerminalPreview_8wekyb3d8bbwe\LocalState\settings.json'),
+    (Join-Path $localAppData 'Microsoft\Windows Terminal\settings.json'),
+    (Join-Path $localAppData 'Microsoft\Windows Terminal Preview\settings.json')
+  )
+}
+
+function Merge-WindowsTerminalKeybindings {
+  $fragment = Join-Path $DotfilesDir 'home\.config\windows-terminal\keybindings.json'
+  $merger = Join-Path $DotfilesDir 'home\.config\windows-terminal\merge-keybindings.js'
+
+  if (!(Test-Path -LiteralPath $fragment -PathType Leaf)) {
+    throw "Missing source: $fragment"
+  }
+  if (!(Test-Path -LiteralPath $merger -PathType Leaf)) {
+    throw "Missing source: $merger"
+  }
+
+  $node = Get-Command node -ErrorAction SilentlyContinue
+  if (-not $node) {
+    Write-Host 'Skipping Windows Terminal keybindings merge: node is required to edit JSONC settings.json safely.'
+    Write-Host "Merge home\.config\windows-terminal\keybindings.json into Windows Terminal settings manually."
+    return
+  }
+
+  $settingsPaths = @(Get-WindowsTerminalSettingsPaths | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf })
+  if ($settingsPaths.Count -eq 0) {
+    Write-Host 'Skipping Windows Terminal keybindings merge: no settings.json found yet.'
+    Write-Host 'Open Windows Terminal once, then re-run install.ps1.'
+    return
+  }
+
+  foreach ($settingsPath in $settingsPaths) {
+    Write-Host "Merging WezTerm-compatible keybindings into: $settingsPath"
+    & node $merger $fragment $settingsPath
+    if ($LASTEXITCODE -ne 0) {
+      throw "Failed to merge Windows Terminal keybindings into: $settingsPath"
+    }
+  }
+}
+
 function Main {
   Require-Windows
   Install-Dotfiles
+  Merge-WindowsTerminalKeybindings
 
   Write-Host 'Done.'
 }
