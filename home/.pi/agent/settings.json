@@ -26,10 +26,20 @@
   "followUpMode": "all",
   "collapseChangelog": true,
   "smartCompact": {
+    "mode": "fast",
     "autoTrigger": true,
     "autoTriggerStrategy": "settled",
     "requireApproval": false,
-    "minContextPercent": 95
+    "minContextPercent": 95,
+    "profiles": {
+      "aggressive": {
+        "keepRecentTokens": 20000,
+        "summaryBudgetTokens": 3000
+      }
+    }
+  },
+  "compaction": {
+    "keepRecentTokens": 12000
   },
   "defaultProvider": "opencode-go",
   "defaultModel": "kimi-k3",
