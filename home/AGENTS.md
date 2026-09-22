@@ -58,7 +58,21 @@ You MUST follow these rules.
 - Debug from facts. Never guess.
 - Fix small quality decay before it becomes normal.
 
-### 9. Personal Guidelines
+### 9. Tool Selection for File Edits
+
+- ALWAYS edit files through your harness's dedicated file-editing tool (whatever it is called: apply-patch, str-replace, edit, write, and similar).
+- NEVER shell out to edit files. Do NOT use `python -c`, Bash, `sed`, `awk`, `perl`, `tee`, here-docs, or `echo`/`cat` redirection to create or change file contents, even for a one-line change.
+- Reserve execution and terminal tools for runtime work only: running tests, builds, linters, formatters, git, package managers, and inspecting live processes.
+- The only exception is a mechanical change across so many files that individual edits would exhaust context. Say so before falling back to a script.
+
+### 10. Long-Running Operations
+
+- NEVER poll with sleep loops. Do NOT issue `sleep X && check`, manual retry loops, or repeated status checks. Each turn burns context.
+- Block on completion instead. Run slow work (builds, migrations, test suites) as a single foreground command with a generous timeout so it returns once, when done.
+- For a process that must outlive the command (servers, daemons), start it detached with output redirected to a log file. Do NOT loop watching it.
+- To wait on a background job or condition, use a blocking primitive: wait on the PID, tail the log until the event appears, or run one health check after the expected completion time. Never a periodic poll.
+
+### 11. Personal Guidelines
 
 - Never use the em dash. Use a plain dash instead.
 - Never auto-add your agent name as a commit co-author.
