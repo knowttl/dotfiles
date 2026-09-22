@@ -27,7 +27,7 @@
   "followUpMode": "all",
   "collapseChangelog": true,
   "smartCompact": {
-    "mode": "fast",
+    "mode": "balanced",
     "autoTrigger": true,
     "autoTriggerStrategy": "settled",
     "requireApproval": false,
