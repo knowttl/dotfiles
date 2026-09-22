@@ -10,10 +10,11 @@
     "git:github.com/algal/pi-openai-server-compaction",
     "npm:pi-smart-compact",
     "npm:pi-meta-oauth",
+    "npm:compact-adviser",
     "npm:pi-background-tasks"
   ],
   "defaultProjectTrust": "always",
-  "lastChangelogVersion": "0.85.1",
+  "lastChangelogVersion": "0.86.0",
   "images": {
     "blockImages": false
   },
@@ -30,7 +31,7 @@
     "autoTrigger": true,
     "autoTriggerStrategy": "settled",
     "requireApproval": false,
-    "minContextPercent": 95,
+    "minContextPercent": 85,
     "profiles": {
       "aggressive": {
         "keepRecentTokens": 20000,
