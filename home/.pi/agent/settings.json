@@ -1,6 +1,6 @@
 {
   "packages": [
-    "npm:@tintinweb/pi-subagents",
+    "npm:pi-subagents",
     "npm:pi-web-access",
     "npm:@ff-labs/pi-fff",
     "npm:pi-stop",
@@ -9,9 +9,7 @@
     "npm:@juanibiapina/pi-extension-settings",
     "git:github.com/algal/pi-openai-server-compaction",
     "npm:pi-smart-compact",
-    "npm:pi-meta-oauth",
-    "npm:compact-adviser",
-    "npm:pi-background-tasks"
+    "npm:pi-meta-oauth"
   ],
   "defaultProjectTrust": "always",
   "lastChangelogVersion": "0.87.1",
@@ -31,7 +29,7 @@
     "autoTrigger": true,
     "autoTriggerStrategy": "settled",
     "requireApproval": false,
-    "minContextPercent": 85,
+    "minContextPercent": 95,
     "profiles": {
       "aggressive": {
         "keepRecentTokens": 20000,

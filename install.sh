@@ -311,7 +311,7 @@ npx --yes skills add kunchenguid/lavish-axi \
 
 echo "==> installing/updating Pi packages"
 PI_PACKAGES=(
-  npm:@tintinweb/pi-subagents
+  npm:pi-subagents
   npm:pi-web-access
   npm:@ff-labs/pi-fff
   npm:pi-stop
@@ -326,6 +326,7 @@ PI_PACKAGES=(
 for package in "${PI_PACKAGES[@]}"; do
   pi install "$package"
 done
+pi update --extensions
 
 is_managed_pi_package() {
   local package
@@ -335,33 +336,26 @@ is_managed_pi_package() {
   return 1
 }
 
+# `pi list` only reads settings.json, so a package dropped from settings but
+# still on disk would linger. Also scan the install dirs. `pi remove` still
+# deletes an on-disk package missing from settings, but then exits 1.
 while read -r package; do
   [[ -z "$package" ]] && continue
   if ! is_managed_pi_package "$package"; then
     echo "==> removing unmanaged Pi package $package"
-    pi remove "$package"
+    pi remove "$package" || true
   fi
-done < <(pi list | sed -nE 's/^  ([^[:space:]]+)$/\1/p')
-
-# Keep the subagent list and background-agent widget visible by default.
-node - "$HOME/.pi/agent/subagents.json" <<'NODE'
-const fs = require("node:fs");
-const path = require("node:path");
-
-const settingsPath = process.argv[2];
-let settings = {};
-
-try {
-  settings = JSON.parse(fs.readFileSync(settingsPath, "utf8"));
-} catch (error) {
-  if (error.code !== "ENOENT") throw error;
-}
-
-settings.fleetView = true;
-settings.widgetMode = "background";
-fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
-fs.writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
-NODE
+done < <(
+  {
+    pi list | sed -nE 's/^  ([^[:space:]]+)$/\1/p'
+    node -e '
+      const deps = require(process.argv[1]).dependencies ?? {};
+      for (const name of Object.keys(deps)) console.log(`npm:${name}`);
+    ' "$HOME/.pi/agent/npm/package.json" 2>/dev/null || true
+    find "$HOME/.pi/agent/git" -mindepth 3 -maxdepth 3 -type d 2>/dev/null \
+      | sed "s|^$HOME/.pi/agent/git/|git:|"
+  } | sort -u
+)
 
 # Trust new Pi project locations by default.
 node - "$HOME/.pi/agent/settings.json" <<'NODE'
