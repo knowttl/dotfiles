@@ -14,7 +14,7 @@
     "npm:pi-background-tasks"
   ],
   "defaultProjectTrust": "always",
-  "lastChangelogVersion": "0.86.0",
+  "lastChangelogVersion": "0.87.1",
   "images": {
     "blockImages": false
   },
