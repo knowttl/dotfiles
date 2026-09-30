@@ -3,22 +3,32 @@ set -euo pipefail
 
 herdr_json="$HOME/.config/herdr/herdr-json"
 
-agents=$("$herdr_json" agent list)
+snapshot=$("$herdr_json" api snapshot)
 
 selected=$(
-  printf '%s' "$agents" |
+  printf '%s' "$snapshot" |
     jq -r '
-      .result.agents[]
-      | [
+      .result.snapshot
+      | (.tabs | INDEX(.tab_id)) as $tabs
+      | [.agents[] | [
           .pane_id,
           (if .focused then "*" else " " end),
           .agent,
+          ($tabs[.tab_id].label // .tab_id),
+          (.title // .terminal_title_stripped // .terminal_title // ""),
           .agent_status,
           .workspace_id,
-          .tab_id,
           .pane_id,
           (.foreground_cwd // .cwd)
-        ]
+        ]]
+      | (transpose | map(map(length) | max)) as $widths
+      | .[]
+      | to_entries
+      | map(
+          if .key == 0 then .value
+          else .value + (" " * ($widths[.key] - (.value | length) + 1))
+          end
+        )
       | @tsv
     ' |
     fzf \
@@ -26,6 +36,7 @@ selected=$(
       --prompt="Agent> " \
       --header="Enter: focus agent" \
       --delimiter=$'\t' \
+      --tabstop=1 \
       --with-nth=2.. \
       --nth=2..
 )
