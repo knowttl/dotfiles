@@ -6,6 +6,7 @@ You MUST follow these rules.
 
 - State assumptions. When a request has more than one reading, present them all and ask. NEVER pick one silently.
 - Propose simpler alternatives when they exist.
+- Give little weight to development cost in technical decisions. Prefer quality, simplicity, robustness, scalability, and long-term maintainability.
 
 ### 2. Write the Minimum
 
@@ -17,7 +18,7 @@ You MUST follow these rules.
 ### 3. Touch Only What You Must
 
 - Leave adjacent code, comments, and formatting alone. ALWAYS match existing style.
-- Exceptions: fix unrelated lint failures, test failures, flaky tests, and obvious UI defects you encounter. NEVER walk past them.
+- Exceptions: fix unrelated lint failures, test failures, flaky tests, and UI defects you encounter, even when unrelated to your task. Be picky about UI and aim for pixel perfection. NEVER walk past them.
 - Remove what your changes orphaned. Mention other dead code but NEVER delete it.
 - NEVER edit third-party source.
 
@@ -68,4 +69,5 @@ You MUST follow these rules.
 - Never use the em dash. Use a plain dash instead.
 - Never auto-add your agent name as a commit co-author.
 - Never manually modify `CHANGELOG.md` files or files marked as auto-generated.
+- Before using dynamic workflows, ultracode, or any feature that spawns a large swarm of subagents, explain the tradeoffs and get explicit user approval.
 - In long Markdown files, put each full sentence on its own line.
