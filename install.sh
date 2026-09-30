@@ -18,22 +18,84 @@ ZSH_LOCAL="$HOME/.zshrc.local"
 # checks for newer inputs and reports when --update is worth running.
 UPDATE=0
 FORCE=0
+SERVER=0
 FLAKE_LOCK_WAS_DIRTY=0
 for arg in "$@"; do
   case "$arg" in
     -u|--update) UPDATE=1 ;;
     --force) FORCE=1 ;;
+    --server) SERVER=1 ;;
     -h|--help)
-      echo "usage: install.sh [--update] [--force]"
+      echo "usage: install.sh [--update] [--force] [--server]"
       echo "  --update, -u   update all packages to their newest versions"
       echo "  --force        reinstall or update native coding agents"
+      echo "  --server       minimal server setup: admin tools + minimal tmux, no Nix"
       exit 0 ;;
     *)
       echo "unknown argument: $arg" >&2
-      echo "usage: install.sh [--update] [--force]" >&2
+      echo "usage: install.sh [--update] [--force] [--server]" >&2
       exit 1 ;;
   esac
 done
+
+# --- Server mode ----------------------------------------------------------
+# Deliberately skips Nix, home-manager, agents, and everything below: a server
+# only gets basic admin tools from the distro package manager (the one place
+# this repo calls apt/dnf/pacman) plus the plugin-free tmux config.
+if [ "$SERVER" -eq 1 ]; then
+  SUDO=""
+  [ "$(id -u)" -eq 0 ] || SUDO="sudo"
+
+  # Package names that are the same on every distro. fd and dig differ and are
+  # appended per package manager below.
+  SERVER_PACKAGES="tmux vim htop ncdu tree curl wget rsync jq ripgrep fzf git less lsof mtr iperf3"
+  if command -v apt-get >/dev/null 2>&1; then
+    PKG_MANAGER="apt"
+    PKG_INSTALL="apt-get install -y"
+    SERVER_PACKAGES="$SERVER_PACKAGES fd-find dnsutils"
+    $SUDO apt-get update
+  elif command -v dnf >/dev/null 2>&1; then
+    PKG_MANAGER="dnf"
+    PKG_INSTALL="dnf install -y"
+    SERVER_PACKAGES="epel-release $SERVER_PACKAGES fd-find bind-utils"
+  elif command -v yum >/dev/null 2>&1; then
+    PKG_MANAGER="yum"
+    PKG_INSTALL="yum install -y"
+    SERVER_PACKAGES="epel-release $SERVER_PACKAGES fd-find bind-utils"
+  elif command -v zypper >/dev/null 2>&1; then
+    PKG_MANAGER="zypper"
+    PKG_INSTALL="zypper --non-interactive install"
+    SERVER_PACKAGES="$SERVER_PACKAGES fd bind-utils"
+  elif command -v pacman >/dev/null 2>&1; then
+    PKG_MANAGER="pacman"
+    PKG_INSTALL="pacman -S --needed --noconfirm"
+    SERVER_PACKAGES="$SERVER_PACKAGES fd bind"
+    # A stale package database makes every package "not found".
+    $SUDO pacman -Sy
+  elif command -v apk >/dev/null 2>&1; then
+    PKG_MANAGER="apk"
+    PKG_INSTALL="apk add"
+    SERVER_PACKAGES="$SERVER_PACKAGES fd bind-tools"
+  else
+    echo "no supported package manager found (apt, dnf, yum, zypper, pacman, apk)" >&2
+    exit 1
+  fi
+
+  # One package at a time: availability varies by distro (e.g. RHEL needs EPEL
+  # for ripgrep/htop/fd), and one missing package must not abort the rest.
+  echo "==> installing server tools with $PKG_MANAGER"
+  FAILED_PACKAGES=""
+  for package in $SERVER_PACKAGES; do
+    # shellcheck disable=SC2086
+    $SUDO $PKG_INSTALL "$package" || FAILED_PACKAGES="$FAILED_PACKAGES $package"
+  done
+  [ -z "$FAILED_PACKAGES" ] || echo "==> could not install:$FAILED_PACKAGES" >&2
+
+  echo "==> installing minimal tmux config"
+  bash "$DIR/minimal-tmux/install.sh"
+  echo "==> done. Server setup complete."
+  exit 0
+fi
 
 if ! git -C "$DIR" diff --quiet -- flake.lock \
   || ! git -C "$DIR" diff --cached --quiet -- flake.lock; then
@@ -295,7 +357,7 @@ npm install --global quota-axi@latest
 echo "==> installing/updating chrome-devtools-axi"
 npm install --global chrome-devtools-axi@latest
 chrome-devtools-axi setup hooks
-echo "==> installing/updating no-mistakes, gh-axi, quota-axi, chrome-devtools-axi, and lavish skills"
+echo "==> installing/updating no-mistakes, gh-axi, quota-axi, chrome-devtools-axi, lavish, vision, codebase-design, and axi skills"
 # Keep the canonical global skills in ~/.agents/skills and expose them only to
 # Claude Code through ~/.claude/skills. Codex reads the shared global store.
 npx --yes skills add kunchenguid/no-mistakes \
@@ -308,6 +370,12 @@ npx --yes skills add kunchenguid/chrome-devtools-axi \
   --skill chrome-devtools-axi --global --agent claude-code --yes
 npx --yes skills add kunchenguid/lavish-axi \
   --skill lavish --global --agent claude-code --yes
+npx --yes skills add kunchenguid/vision \
+  --global --agent claude-code --yes
+npx --yes skills add mattpocock/skills \
+  --skill codebase-design --global --agent claude-code --yes
+npx --yes skills add kunchenguid/axi \
+  --global --agent claude-code --yes
 
 echo "==> installing/updating Pi packages"
 PI_PACKAGES=(
@@ -515,7 +583,15 @@ publish_flake_update() {
     y|Y|yes|Yes|YES)
       git -C "$DIR" add flake.lock
       git -C "$DIR" commit --only flake.lock -m "Update flake inputs"
-      git -C "$DIR" push
+      # Tools edit tracked files through the repo symlinks (e.g. Pi rewrites
+      # home/.pi/agent/settings.json), so the tree is usually dirty here.
+      # --autostash lets the rebase run anyway, and the rebase lets the push
+      # succeed when another machine pushed first.
+      if ! git -C "$DIR" pull --rebase --autostash \
+        || ! git -C "$DIR" push; then
+        echo "==> could not publish flake.lock; resolve in $DIR and push by hand" >&2
+        return 0
+      fi
       echo "==> flake.lock committed and pushed"
       ;;
     *)

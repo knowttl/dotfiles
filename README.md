@@ -66,6 +66,10 @@ Then, now and every time after:
 
 (There's also a `rebuild` shell alias that runs the same script.)
 
+On a server, run `./install.sh --server` instead.
+It skips Nix and everything else below, installs basic admin tools through apt, dnf, yum, zypper, pacman, or apk (tmux, vim, htop, ncdu, tree, curl, wget, rsync, jq, ripgrep, fd, fzf, git, less, lsof, mtr, iperf3, dig), and applies the [minimal tmux config](minimal-tmux/README.md).
+It needs sudo unless run as root.
+
 Run `./install.sh --update` to update all flake inputs.
 After a successful update, the installer asks whether to commit and push the
 resulting `flake.lock` change.
