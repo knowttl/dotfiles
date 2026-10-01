@@ -360,22 +360,24 @@ chrome-devtools-axi setup hooks
 echo "==> installing/updating no-mistakes, gh-axi, quota-axi, chrome-devtools-axi, lavish, vision, codebase-design, and axi skills"
 # Keep the canonical global skills in ~/.agents/skills and expose them only to
 # Claude Code through ~/.claude/skills. Codex reads the shared global store.
+# Naming two agents matters: with a single --agent the skills CLI silently
+# switches to copy mode and never populates ~/.agents/skills.
 npx --yes skills add kunchenguid/no-mistakes \
-  --skill no-mistakes --global --agent claude-code --yes
+  --skill no-mistakes --global --agent universal claude-code --yes
 npx --yes skills add kunchenguid/gh-axi \
-  --skill gh-axi --global --agent claude-code --yes
+  --skill gh-axi --global --agent universal claude-code --yes
 npx --yes skills add kunchenguid/quota-axi \
-  --skill quota-axi --global --agent claude-code --yes
+  --skill quota-axi --global --agent universal claude-code --yes
 npx --yes skills add kunchenguid/chrome-devtools-axi \
-  --skill chrome-devtools-axi --global --agent claude-code --yes
+  --skill chrome-devtools-axi --global --agent universal claude-code --yes
 npx --yes skills add kunchenguid/lavish-axi \
-  --skill lavish --global --agent claude-code --yes
+  --skill lavish --global --agent universal claude-code --yes
 npx --yes skills add kunchenguid/vision \
-  --global --agent claude-code --yes
+  --global --agent universal claude-code --yes
 npx --yes skills add mattpocock/skills \
-  --skill codebase-design --global --agent claude-code --yes
+  --skill codebase-design --global --agent universal claude-code --yes
 npx --yes skills add kunchenguid/axi \
-  --global --agent claude-code --yes
+  --global --agent universal claude-code --yes
 
 echo "==> installing/updating Pi packages"
 PI_PACKAGES=(
