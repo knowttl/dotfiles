@@ -1,6 +1,7 @@
 {
   "packages": [
     "npm:pi-subagents",
+    "npm:pi-background-tasks",
     "npm:pi-web-access",
     "npm:@ff-labs/pi-fff",
     "npm:pi-stop",
