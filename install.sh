@@ -383,7 +383,6 @@ PI_PACKAGES=(
   npm:pi-web-access
   npm:@ff-labs/pi-fff
   npm:pi-stop
-  npm:pi-mcp-adapter
   npm:pi-smart-compact
   npm:pi-antigravity
   npm:@juanibiapina/pi-extension-settings

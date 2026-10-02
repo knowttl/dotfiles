@@ -4,7 +4,6 @@
     "npm:pi-web-access",
     "npm:@ff-labs/pi-fff",
     "npm:pi-stop",
-    "npm:pi-mcp-adapter",
     "npm:pi-antigravity",
     "npm:@juanibiapina/pi-extension-settings",
     "git:github.com/algal/pi-openai-server-compaction",
@@ -12,7 +11,7 @@
     "npm:pi-meta-oauth"
   ],
   "defaultProjectTrust": "always",
-  "lastChangelogVersion": "0.87.1",
+  "lastChangelogVersion": "1.0.0",
   "images": {
     "blockImages": false
   },
