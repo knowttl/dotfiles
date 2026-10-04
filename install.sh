@@ -380,6 +380,7 @@ npx --yes skills add kunchenguid/axi \
 echo "==> installing/updating Pi packages"
 PI_PACKAGES=(
   npm:pi-subagents
+  npm:pi-background-tasks
   npm:pi-web-access
   npm:@ff-labs/pi-fff
   npm:pi-stop
