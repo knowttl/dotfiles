@@ -384,10 +384,10 @@ PI_PACKAGES=(
   npm:pi-web-access
   npm:@ff-labs/pi-fff
   npm:pi-stop
+  npm:billion-context
   npm:pi-antigravity
   npm:@juanibiapina/pi-extension-settings
   npm:pi-meta-oauth
-  git:github.com/algal/pi-openai-server-compaction
 )
 
 for package in "${PI_PACKAGES[@]}"; do

@@ -247,6 +247,8 @@ in
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/tmux";
   home.file.".config/herdr".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/herdr";
+  home.file.".config/billion-context/billion-context.json".source =
+    config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.config/billion-context/billion-context.json";
   home.file.".pi/agent/keybindings.json".source =
     config.lib.file.mkOutOfStoreSymlink "${dotfiles}/home/.pi/agent/keybindings.json";
   home.file.".pi/agent/models.json".source =

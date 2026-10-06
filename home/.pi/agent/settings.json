@@ -7,8 +7,8 @@
     "npm:pi-stop",
     "npm:pi-antigravity",
     "npm:@juanibiapina/pi-extension-settings",
-    "git:github.com/algal/pi-openai-server-compaction",
-    "npm:pi-meta-oauth"
+    "npm:pi-meta-oauth",
+    "npm:billion-context"
   ],
   "defaultProjectTrust": "always",
   "lastChangelogVersion": "1.0.0",

@@ -1,0 +1,7 @@
+{
+  "autoUpdate": false,
+  "advisoryCheck": false,
+  "pi": {
+    "subagents": false
+  }
+}

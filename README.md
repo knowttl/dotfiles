@@ -123,6 +123,21 @@ missing one of these attributes, the build fails on exactly that line - just
 remove it from `home.packages` in `home.nix`, or pull only that tool from an
 `nixpkgs-unstable` overlay while keeping everything else on stable.
 
+### Pi context management
+
+`install.sh` installs `billion-context` as Pi's sole automatic context manager.
+Start Pi normally; the extension starts a loopback proxy without changing provider URLs or credentials.
+After sending a message, use `/acp` to check compression status and `/acp-cache` to inspect cache usage.
+Compression folds older messages into summaries; it does not enlarge the model's actual context window.
+
+Settings live in `home/.config/billion-context/billion-context.json`, exposed through Home Manager at `~/.config/billion-context/billion-context.json`.
+`autoUpdate: false` and `advisoryCheck: false` disable background package updates and advisory checks so `install.sh` manages package updates.
+Disabling advisory checks also disables upstream warnings about known broken releases.
+Billion Context's built-in subagents are disabled because this setup keeps `pi-subagents`.
+Do not install another automatic compaction extension alongside it.
+Original context and summaries persist locally under `~/.local/share/billion-context/sessions/`; treat that directory as sensitive session data.
+Restart Pi after installing or updating the extension.
+
 ### Neovim toolchain
 
 The Neovim config is based on kickstart.nvim and keeps **Mason** to manage LSP
