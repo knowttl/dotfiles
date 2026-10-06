@@ -8,7 +8,6 @@
     "npm:pi-antigravity",
     "npm:@juanibiapina/pi-extension-settings",
     "git:github.com/algal/pi-openai-server-compaction",
-    "npm:pi-smart-compact",
     "npm:pi-meta-oauth"
   ],
   "defaultProjectTrust": "always",
@@ -24,19 +23,6 @@
   "steeringMode": "all",
   "followUpMode": "all",
   "collapseChangelog": true,
-  "smartCompact": {
-    "mode": "balanced",
-    "autoTrigger": true,
-    "autoTriggerStrategy": "settled",
-    "requireApproval": false,
-    "minContextPercent": 95,
-    "profiles": {
-      "aggressive": {
-        "keepRecentTokens": 20000,
-        "summaryBudgetTokens": 3000
-      }
-    }
-  },
   "compaction": {
     "keepRecentTokens": 12000
   },

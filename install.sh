@@ -384,7 +384,6 @@ PI_PACKAGES=(
   npm:pi-web-access
   npm:@ff-labs/pi-fff
   npm:pi-stop
-  npm:pi-smart-compact
   npm:pi-antigravity
   npm:@juanibiapina/pi-extension-settings
   npm:pi-meta-oauth
@@ -447,14 +446,6 @@ settings.quietStartup = true;
 settings.steeringMode = "all";
 settings.followUpMode = "all";
 settings.collapseChangelog = true;
-// pi-smart-compact: request compaction once an idle session reaches 95% usage.
-settings.smartCompact = {
-  ...(settings.smartCompact ?? {}),
-  autoTrigger: true,
-  autoTriggerStrategy: "settled",
-  requireApproval: false,
-  minContextPercent: 95,
-};
 fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
 fs.writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
 NODE
