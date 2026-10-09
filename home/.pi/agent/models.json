@@ -7,6 +7,9 @@
         },
         "grok-4.6": {
           "contextWindow": 200000
+        },
+        "grok-4.7": {
+          "contextWindow": 200000
         }
       }
     },
