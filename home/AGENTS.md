@@ -8,6 +8,7 @@
 
 ### 2. Write the Minimum
 
+- KISS (Keep It Simple): choose the simplest design that meets the requirements.
 - Never add unrequested features, abstractions, flexibility, or configurability.
 - Never handle impossible scenarios.
 - If 200 lines could be 50, rewrite to 50.
@@ -39,7 +40,8 @@
 - Deletion test: if removing a module would concentrate its complexity in one place, it is shallow and should go. If removal would spread complexity across callers, it is deep and earns its keep.
 - Design interfaces around caller needs, not implementation details.
 - Make invalid states impossible. Never make callers repeat defensive checks.
-- One source of truth per piece of system knowledge.
+- DRY (Don't Repeat Yourself): keep each piece of knowledge or business rule in one authoritative place.
+  Share repeated knowledge, not merely similar-looking code.
 - Flag shallow modules you encounter and propose deepening refactors. Do not apply them unasked.
 
 ### 7. Tool Selection for File Edits
