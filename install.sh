@@ -458,7 +458,7 @@ if [ ! -e "$CLAUDE_STATUSLINE_COMMAND" ]; then
     "$CLAUDE_STATUSLINE_COMMAND"
 fi
 
-node - "$HOME/.codex/config.toml" "$HOME/.claude/settings.json" <<'NODE'
+node - "$HOME/.codex/config.toml" "$HOME/.claude/settings.json" "$DIR" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
 
@@ -500,28 +500,29 @@ try {
   if (error.code !== "ENOENT") throw error;
 }
 
-let claudeSettingsChanged = false;
+// home/claude-settings.json owns its keys: they overwrite local values so every
+// machine behaves the same. Anything it omits (model, effortLevel, theme, the
+// herdr hook with its absolute path) stays machine-local. SessionStart hooks
+// are appended by command so hooks other installers wrote are preserved.
+const sharedClaudeSettings = JSON.parse(
+  fs.readFileSync(path.join(process.argv[4], "home/claude-settings.json"), "utf8"),
+);
+const { hooks: sharedHooks, ...sharedKeys } = sharedClaudeSettings;
+const hookCommands = (entries) =>
+  entries.flatMap((entry) => entry.hooks.map((hook) => hook.command));
 
-if (!Object.hasOwn(claudeSettings, "statusLine")) {
-  claudeSettings.statusLine = {
-    command: "zsh ~/.claude/statusline-command.sh",
-    type: "command",
-  };
-  claudeSettingsChanged = true;
+Object.assign(claudeSettings, sharedKeys);
+claudeSettings.hooks ??= {};
+const sessionStart = (claudeSettings.hooks.SessionStart ??= []);
+const installedCommands = new Set(hookCommands(sessionStart));
+for (const entry of sharedHooks.SessionStart) {
+  if (!hookCommands([entry]).every((command) => installedCommands.has(command))) {
+    sessionStart.push(entry);
+  }
 }
 
-// Default every session to --dangerously-skip-permissions. Respected if a
-// prior run (or the user) already set permissions.defaultMode explicitly.
-claudeSettings.permissions ??= {};
-if (!Object.hasOwn(claudeSettings.permissions, "defaultMode")) {
-  claudeSettings.permissions.defaultMode = "bypassPermissions";
-  claudeSettingsChanged = true;
-}
-
-if (claudeSettingsChanged) {
-  fs.mkdirSync(path.dirname(claudeSettingsPath), { recursive: true });
-  fs.writeFileSync(claudeSettingsPath, JSON.stringify(claudeSettings, null, 2) + "\n");
-}
+fs.mkdirSync(path.dirname(claudeSettingsPath), { recursive: true });
+fs.writeFileSync(claudeSettingsPath, JSON.stringify(claudeSettings, null, 2) + "\n");
 NODE
 
 # herdr has no installer script, but its CI publishes a prebuilt binary per
