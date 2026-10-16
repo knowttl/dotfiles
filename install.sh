@@ -548,7 +548,20 @@ mv "$HOME/.local/bin/herdr.tmp" "$HOME/.local/bin/herdr"
 # skips gracefully with a printed manual command if it can't.
 ZSH_BIN="$HOME/.nix-profile/bin/zsh"
 CURRENT_SHELL="$(getent passwd "$USER" 2>/dev/null | cut -d: -f7 || echo "")"
-if [ -x "$ZSH_BIN" ] && [ "$CURRENT_SHELL" != "$ZSH_BIN" ]; then
+BASH_PROFILE="$HOME/.bash_profile"
+ZSH_HANDOFF_MARKER="# dotfiles: hand off to nix zsh"
+if [ -x "$ZSH_BIN" ] && [ "$CURRENT_SHELL" != "$ZSH_BIN" ] \
+  && ! grep -q "^$USER:" /etc/passwd; then
+  # Directory (SSSD/AD) accounts aren't in /etc/passwd, so chsh can't change
+  # their login shell. Hand off from bash to zsh in interactive logins instead.
+  # SHELL is exported so tools that spawn $SHELL (herdr, tmux) get zsh too.
+  if ! grep -qxF "$ZSH_HANDOFF_MARKER" "$BASH_PROFILE" 2>/dev/null; then
+    echo "==> directory account; adding zsh hand-off to $BASH_PROFILE"
+    printf '\n%s\n%s\n' "$ZSH_HANDOFF_MARKER" \
+      'case $- in *i*) [ -x "$HOME/.nix-profile/bin/zsh" ] && SHELL="$HOME/.nix-profile/bin/zsh" && exec "$SHELL" -l ;; esac' \
+      >> "$BASH_PROFILE"
+  fi
+elif [ -x "$ZSH_BIN" ] && [ "$CURRENT_SHELL" != "$ZSH_BIN" ]; then
   echo "==> setting zsh as login shell"
   grep -qxF "$ZSH_BIN" /etc/shells 2>/dev/null \
     || echo "$ZSH_BIN" | sudo tee -a /etc/shells >/dev/null \

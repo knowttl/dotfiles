@@ -91,7 +91,8 @@ On a fresh machine `install.sh`, in order:
    CLI after that).
 5. Best-effort sets the nix `zsh` as your login shell (`/etc/shells` + `chsh`)
    if it isn't already. Skipped gracefully if it can't; the manual command is
-   printed.
+   printed. For directory (SSSD/AD) accounts, which `chsh` can't change, it
+   instead appends an interactive-only `exec zsh` hand-off to `~/.bash_profile`.
 
 On later runs the guarded steps are skipped and it just re-applies the config.
 Open a new terminal after the first run so zsh and the new PATH take effect.
