@@ -12,6 +12,12 @@ FLAKE_HOST="default"   # must match flake.nix homeConfigurations.<name>
 TPM_DIR="$HOME/.tmux/plugins/tpm"
 ZSH_LOCAL="$HOME/.zshrc.local"
 
+# Export opt-outs before any installer or installed tool runs.
+set -a
+# shellcheck source=home/telemetry.env disable=SC1091
+. "$DIR/home/telemetry.env"
+set +a
+
 # --- Arguments ------------------------------------------------------------
 # --update / -u bumps every pinned flake input to its newest version before
 # applying, so the switch below installs the latest packages. A normal run
@@ -111,9 +117,27 @@ if command -v nix >/dev/null 2>&1; then
 else
   echo "==> installing Determinate Nix"
   curl --proto '=https' --tlsv1.2 -sSf -L https://install.determinate.systems/nix \
-    | sh -s -- install --no-confirm
+    | sh -s -- install --no-confirm --diagnostic-endpoint="$NIX_INSTALLER_DIAGNOSTIC_ENDPOINT"
   # shellcheck disable=SC1091
   . /nix/var/nix/profiles/default/etc/profile.d/nix-daemon.sh
+fi
+
+# Determinate's system daemon does not inherit user-session opt-outs.
+if command -v determinate-nixd >/dev/null 2>&1; then
+  NIX_TELEMETRY_CONFIG="/etc/systemd/system/nix-daemon.service.d/99-dotfiles-telemetry.conf"
+  nix_telemetry_config="$(printf '[Service]\nEnvironment="DETSYS_IDS_TELEMETRY=%s" "NIX_SENTRY_ENDPOINT=%s"\n' \
+    "$DETSYS_IDS_TELEMETRY" "$NIX_SENTRY_ENDPOINT")"
+  if [ "$(cat "$NIX_TELEMETRY_CONFIG" 2>/dev/null || true)" != "$nix_telemetry_config" ]; then
+    echo "==> disabling Determinate Nix daemon telemetry and restarting the service"
+    SUDO=""
+    [ "$(id -u)" -eq 0 ] || SUDO="sudo"
+    # Copy only these opt-outs into a root-owned file, never source a
+    # user-writable environment file from a privileged service.
+    printf '%s\n' "$nix_telemetry_config" \
+      | $SUDO install -D -m 644 /dev/stdin "$NIX_TELEMETRY_CONFIG"
+    $SUDO systemctl daemon-reload
+    $SUDO systemctl restart nix-daemon.service
+  fi
 fi
 
 # --- 2. Repo symlink ------------------------------------------------------
@@ -295,6 +319,9 @@ if agent_needs_install "Codex" "$CODEX_CURRENT_VERSION" "$CODEX_LATEST_VERSION";
   } | INSTALLER_GITHUB_TOKEN="$installer_github_token" CODEX_NON_INTERACTIVE=1 sh
 fi
 
+echo "==> disabling Codex telemetry"
+node "$DIR/home/disable-codex-telemetry.mjs"
+
 if [ "$INSTALL_OPENCODE" -eq 1 ]; then
   OPENCODE_CURRENT_VERSION="$(version_from_command opencode || true)"
   OPENCODE_LATEST_VERSION="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
@@ -319,7 +346,6 @@ PI_LATEST_VERSION="$(npm view @earendil-works/pi-coding-agent version 2>/dev/nul
 if agent_needs_install "Pi" "$PI_CURRENT_VERSION" "$PI_LATEST_VERSION"; then
   # Pi's installer uses /dev/tty for its action menu. A new session has no
   # controlling terminal, so it automatically installs or updates without a prompt.
-  export PI_TELEMETRY=0
   uninstall_existing_pi
   NPM_CONFIG_PREFIX="$HOME/.local" \
     setsid --wait sh -c 'curl -fsSL https://pi.dev/install.sh | sh'
@@ -557,6 +583,7 @@ if [ -x "$ZSH_BIN" ] && [ "$CURRENT_SHELL" != "$ZSH_BIN" ] \
   # SHELL is exported so tools that spawn $SHELL (herdr, tmux) get zsh too.
   if ! grep -qxF "$ZSH_HANDOFF_MARKER" "$BASH_PROFILE" 2>/dev/null; then
     echo "==> directory account; adding zsh hand-off to $BASH_PROFILE"
+    # shellcheck disable=SC2016 # Expand variables when the login profile runs.
     printf '\n%s\n%s\n' "$ZSH_HANDOFF_MARKER" \
       'case $- in *i*) [ -x "$HOME/.nix-profile/bin/zsh" ] && SHELL="$HOME/.nix-profile/bin/zsh" && exec "$SHELL" -l ;; esac' \
       >> "$BASH_PROFILE"

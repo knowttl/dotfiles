@@ -56,7 +56,17 @@ in
   ];
   fonts.fontconfig.enable = true;
   home.sessionVariables.EDITOR = "nvim";
-  home.sessionVariables.PI_TELEMETRY = "0";
+  home.sessionVariablesExtra = ''
+    set -a
+    . "${dotfiles}/home/telemetry.env"
+    set +a
+  '';
+  # Managed services do not inherit shell exports. The prefix drop-in also
+  # covers no-mistakes' instance-specific service names and survives updates.
+  home.file.".config/systemd/user/no-mistakes-.service.d/telemetry.conf".text = ''
+    [Service]
+    EnvironmentFile=${dotfiles}/home/telemetry.env
+  '';
   # Native coding-agent installs live in ~/.local/bin. See install.sh.
   home.sessionPath = [ "$HOME/.local/bin" ];
 

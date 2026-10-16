@@ -125,6 +125,17 @@ nix build --impure .#homeConfigurations.default.activationPackage --dry-run
 `install.sh` installs Claude Code, Codex, and Pi through their native installers so they can track upstream releases.
 OpenCode uses its native installer only when `--opencode` is specified.
 
+### Telemetry
+
+`install.sh` exports the supported telemetry opt-outs in `home/telemetry.env` before running installers or tools.
+Home Manager loads the same settings for future shell sessions and the no-mistakes systemd service, including after tool updates.
+These cover no-mistakes, Lavish, Pi, Claude Code, the Skills CLI, Chrome DevTools MCP, and the documented Determinate Nix client and installer controls.
+When Determinate Nixd is installed, the installer also writes a root-owned systemd drop-in for `nix-daemon.service` and restarts the service if the opt-outs changed.
+That step requires sudo unless running as root and happens before any Nix package downloads.
+The installer also disables Codex analytics, feedback, and OpenTelemetry exports through Codex's config writer, preserving unrelated settings.
+Tools without an applicable telemetry control keep their existing behavior.
+After applying these changes, open a new terminal and restart already-running tools to pick up the opt-outs.
+
 ### Pi context management
 
 `install.sh` installs `billion-context` as Pi's sole automatic context manager.
