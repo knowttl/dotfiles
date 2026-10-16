@@ -13,9 +13,10 @@ Running the switch builds:
 
 - Nix user packages (ripgrep, fd, fzf, jq, lazygit, Neovim, tmux, git, ranger)
 - Tools installed outside Nix so they track upstream releases instead of
-  nixpkgs: the coding agents claude-code / codex / opencode / pi via their native
+  nixpkgs: the coding agents claude-code / codex / pi via their native
   installers, no-mistakes, treehouse, gh-axi, their agent skills, their herdr
   integrations, and herdr as the prebuilt binary from its GitHub releases
+- OpenCode and its herdr integration when requested with `--opencode`
 - Neovim's toolchain deps from Nix (gcc, make, nodejs, unzip) so treesitter,
   telescope, and Mason's language servers have what they need. LSP servers and
   formatters themselves are still managed by Mason inside Neovim - see
@@ -65,6 +66,9 @@ Then, now and every time after:
 ```
 
 (There's also a `rebuild` shell alias that runs the same script.)
+
+Run `./install.sh --opencode` to also install or update OpenCode and its herdr integration.
+Without this flag, existing OpenCode installations are left alone, including with `--update` or `--force`.
 
 On a server, run `./install.sh --server` instead.
 It skips Nix and everything else below, installs basic admin tools through apt, dnf, yum, zypper, pacman, or apk (tmux, vim, htop, ncdu, tree, curl, wget, rsync, jq, ripgrep, fd, fzf, git, less, lsof, mtr, iperf3, dig), and applies the [minimal tmux config](minimal-tmux/README.md).
@@ -117,11 +121,8 @@ nix build --impure .#homeConfigurations.default.activationPackage --dry-run
 
 ### About the coding-agent packages
 
-`claude-code`, `codex`, and `opencode` are fast-moving and unfree
-(`allowUnfree = true` is set in `flake.nix`). If a future stable release is
-missing one of these attributes, the build fails on exactly that line - just
-remove it from `home.packages` in `home.nix`, or pull only that tool from an
-`nixpkgs-unstable` overlay while keeping everything else on stable.
+`install.sh` installs Claude Code, Codex, and Pi through their native installers so they can track upstream releases.
+OpenCode uses its native installer only when `--opencode` is specified.
 
 ### Pi context management
 

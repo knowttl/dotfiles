@@ -19,21 +19,24 @@ ZSH_LOCAL="$HOME/.zshrc.local"
 UPDATE=0
 FORCE=0
 SERVER=0
+INSTALL_OPENCODE=0
 FLAKE_LOCK_WAS_DIRTY=0
 for arg in "$@"; do
   case "$arg" in
     -u|--update) UPDATE=1 ;;
     --force) FORCE=1 ;;
     --server) SERVER=1 ;;
+    --opencode) INSTALL_OPENCODE=1 ;;
     -h|--help)
-      echo "usage: install.sh [--update] [--force] [--server]"
+      echo "usage: install.sh [--update] [--force] [--server] [--opencode]"
       echo "  --update, -u   update all packages to their newest versions"
       echo "  --force        reinstall or update native coding agents"
       echo "  --server       minimal server setup: admin tools + minimal tmux, no Nix"
+      echo "  --opencode     also install or update OpenCode"
       exit 0 ;;
     *)
       echo "unknown argument: $arg" >&2
-      echo "usage: install.sh [--update] [--force] [--server]" >&2
+      echo "usage: install.sh [--update] [--force] [--server] [--opencode]" >&2
       exit 1 ;;
   esac
 done
@@ -292,20 +295,22 @@ if agent_needs_install "Codex" "$CODEX_CURRENT_VERSION" "$CODEX_LATEST_VERSION";
   } | INSTALLER_GITHUB_TOKEN="$installer_github_token" CODEX_NON_INTERACTIVE=1 sh
 fi
 
-OPENCODE_CURRENT_VERSION="$(version_from_command opencode || true)"
-OPENCODE_LATEST_VERSION="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
-  https://github.com/anomalyco/opencode/releases/latest 2>/dev/null \
-  | sed -n 's#.*/v\([^/]*\)$#\1#p' || true)"
-if agent_needs_install "OpenCode" "$OPENCODE_CURRENT_VERSION" "$OPENCODE_LATEST_VERSION"; then
-  uninstall_existing_opencode
-  {
-    emit_authenticated_github_curl
-    curl -fsSL https://opencode.ai/install
-  } | INSTALLER_GITHUB_TOKEN="$installer_github_token" bash -s -- --no-modify-path
-  mkdir -p "$HOME/.local/bin"
-  if [ -e "$HOME/.opencode/bin/opencode" ]; then
-    mv "$HOME/.opencode/bin/opencode" "$HOME/.local/bin/opencode"
-    rmdir "$HOME/.opencode/bin" 2>/dev/null || true
+if [ "$INSTALL_OPENCODE" -eq 1 ]; then
+  OPENCODE_CURRENT_VERSION="$(version_from_command opencode || true)"
+  OPENCODE_LATEST_VERSION="$(curl -fsSLI -o /dev/null -w '%{url_effective}' \
+    https://github.com/anomalyco/opencode/releases/latest 2>/dev/null \
+    | sed -n 's#.*/v\([^/]*\)$#\1#p' || true)"
+  if agent_needs_install "OpenCode" "$OPENCODE_CURRENT_VERSION" "$OPENCODE_LATEST_VERSION"; then
+    uninstall_existing_opencode
+    {
+      emit_authenticated_github_curl
+      curl -fsSL https://opencode.ai/install
+    } | INSTALLER_GITHUB_TOKEN="$installer_github_token" bash -s -- --no-modify-path
+    mkdir -p "$HOME/.local/bin"
+    if [ -e "$HOME/.opencode/bin/opencode" ]; then
+      mv "$HOME/.opencode/bin/opencode" "$HOME/.local/bin/opencode"
+      rmdir "$HOME/.opencode/bin" 2>/dev/null || true
+    fi
   fi
 fi
 
@@ -415,6 +420,7 @@ while read -r package; do
 done < <(
   {
     pi list | sed -nE 's/^  ([^[:space:]]+)$/\1/p'
+    # shellcheck disable=SC2016 # Template literals are expanded by Node.
     node -e '
       const deps = require(process.argv[1]).dependencies ?? {};
       for (const name of Object.keys(deps)) console.log(`npm:${name}`);
@@ -597,9 +603,12 @@ publish_flake_update
 # Install integrations last so no later installer step can remove or overwrite
 # the generated integration files.
 echo "==> installing herdr integrations"
-for integration in pi claude codex opencode; do
+for integration in pi claude codex; do
   herdr integration install "$integration"
 done
+if [ "$INSTALL_OPENCODE" -eq 1 ]; then
+  herdr integration install opencode
+fi
 
 # A running server keeps serving the old binary's protocol, so every CLI call
 # from the new one fails until it is restarted. The swap is what creates the
