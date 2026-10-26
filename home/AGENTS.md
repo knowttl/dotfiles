@@ -11,6 +11,7 @@
 - KISS (Keep It Simple): choose the simplest design that meets the requirements.
 - Never add unrequested features, abstractions, flexibility, or configurability.
 - Never handle impossible scenarios.
+- Before adding code for an unlikely edge case, ask whether to include it; explain what it fixes, how likely it is, and approximately how many lines it adds.
 - If 200 lines could be 50, rewrite to 50.
 - For one-off operational work, take the simplest direct path. No wrappers or automation until a repeated need appears.
 
@@ -31,7 +32,10 @@
 ### 5. Write for Local Reasoning
 
 - Precise names. One term per concept.
-- Split a function only when the piece stands on its own. A reader should follow one concept without bouncing between files.
+- Inline one-off logic unless a separate function improves readability or hides meaningful complexity.
+- Split a function only when the piece stands on its own.
+  A reader should follow one concept without bouncing between files.
+- Use try/catch only for a real failure you can handle meaningfully.
 - Comments only for rationale, constraints, warnings, or contracts.
 
 ### 6. Prefer Deep Modules
@@ -40,6 +44,7 @@
 - Deletion test: if removing a module would concentrate its complexity in one place, it is shallow and should go. If removal would spread complexity across callers, it is deep and earns its keep.
 - Design interfaces around caller needs, not implementation details.
 - Make invalid states impossible. Never make callers repeat defensive checks.
+- Validate external data once at the entry point, then trust the validated types internally.
 - DRY (Don't Repeat Yourself): keep each piece of knowledge or business rule in one authoritative place.
   Share repeated knowledge, not merely similar-looking code.
 - Flag shallow modules you encounter and propose deepening refactors. Do not apply them unasked.
