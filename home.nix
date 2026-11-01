@@ -191,7 +191,7 @@ in
     settings = {
       user = {
         name  = "knowttl";
-        email = "knowttl42@gmail.com";
+        email = "190909824+knowttl@users.noreply.github.com";
       };
       credential.helper = "!gh auth git-credential";
     };
