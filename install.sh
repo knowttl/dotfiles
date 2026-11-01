@@ -674,4 +674,10 @@ if [ -n "$HERDR_VERSION_BEFORE" ] \
   echo "      HERDR_SOCKET_PATH=\"\$HOME/.config/herdr/herdr.sock\" herdr server stop"
 fi
 
+# npm audit does not support global installs; Pi extensions use a local project.
+echo "==> applying compatible npm security fixes to Pi packages"
+if ! npm audit fix --prefix "$HOME/.pi/agent/npm"; then
+  echo "==> npm audit could not resolve all issues; review the report above" >&2
+fi
+
 echo "==> done. Open a new terminal for shell/PATH changes to take effect."

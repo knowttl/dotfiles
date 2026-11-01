@@ -67,6 +67,10 @@ Then, now and every time after:
 
 (There's also a `rebuild` shell alias that runs the same script.)
 
+At the end, the installer runs `npm audit fix` for Pi's npm extension dependencies to apply compatible security updates.
+It does not use `--force`; unresolved vulnerabilities or audit errors are reported without failing setup.
+Global npm CLIs are updated during installation, but npm audit does not support global installs.
+
 Run `./install.sh --opencode` to also install or update OpenCode and its herdr integration.
 Without this flag, existing OpenCode installations are left alone, including with `--update` or `--force`.
 
