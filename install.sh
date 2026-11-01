@@ -456,7 +456,7 @@ done < <(
   } | sort -u
 )
 
-# Trust new Pi project locations by default.
+# Apply Pi defaults after package installation and updates.
 node - "$HOME/.pi/agent/settings.json" <<'NODE'
 const fs = require("node:fs");
 const path = require("node:path");
@@ -478,6 +478,19 @@ settings.quietStartup = true;
 settings.steeringMode = "all";
 settings.followUpMode = "all";
 settings.collapseChangelog = true;
+// Keep normal Anthropic API-key authentication instead of the OAuth-only override.
+settings.packages = (settings.packages ?? []).map((entry) => {
+  const pkg = typeof entry === "string" ? { source: entry } : entry;
+  if (pkg.source !== "npm:pi-background-tasks") return entry;
+  if (pkg.extensions?.length === 0) return entry;
+  return {
+    ...pkg,
+    extensions: [...new Set([
+      ...(pkg.extensions ?? []),
+      "!dist/extensions/anthropic-attribution.js",
+    ])],
+  };
+});
 fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
 fs.writeFileSync(settingsPath, `${JSON.stringify(settings, null, 2)}\n`);
 NODE

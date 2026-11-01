@@ -136,6 +136,13 @@ The installer also disables Codex analytics, feedback, and OpenTelemetry exports
 Tools without an applicable telemetry control keep their existing behavior.
 After applying these changes, open a new terminal and restart already-running tools to pick up the opt-outs.
 
+### Pi authentication
+
+`install.sh` disables the `pi-background-tasks` Anthropic attribution override, which requires subscription OAuth and rejects API keys before sending a request.
+Pi uses its normal Anthropic authentication, while the package's other extensions remain enabled.
+The package's own Anthropic background agents still require subscription OAuth.
+Restart Pi after running the installer to apply the change.
+
 ### Pi context management
 
 `install.sh` installs `billion-context` as Pi's sole automatic context manager.
