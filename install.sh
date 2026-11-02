@@ -431,8 +431,8 @@ BILLION_CONTEXT_PATCH="$DIR/patches/billion-context-4898.patch"
 BILLION_CONTEXT_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/billion-context"
 
 # Prints the source Pi should load for billion-context: the patched checkout,
-# or npm:billion-context when upstream already has the fix or the patch no
-# longer applies. The outcome is cached per release tag and patch content, so
+# or npm:billion-context when upstream already has the fix.
+# The outcome is cached per release tag and patch content, so
 # repeat runs neither clone nor rebuild.
 BILLION_CONTEXT_EXISTING="$(node - "$HOME/.pi/agent/settings.json" <<'NODE'
 const fs = require('node:fs');
@@ -455,13 +455,8 @@ NODE
 )"
 
 billion_context_preparation_failed() {
-  if [ -n "$BILLION_CONTEXT_EXISTING" ]; then
-    echo "==> WARNING: $1; keeping existing billion-context at $BILLION_CONTEXT_EXISTING" >&2
-    echo "$BILLION_CONTEXT_EXISTING"
-  else
-    echo "==> WARNING: $1; no working local installation found, using npm:billion-context WITHOUT the #4898 fix" >&2
-    echo "npm:billion-context"
-  fi
+  echo "==> ERROR: $1; leaving existing billion-context installation unchanged" >&2
+  return 1
 }
 
 resolve_billion_context_package() {
@@ -469,7 +464,7 @@ resolve_billion_context_package() {
   version="$(npm view billion-context version)" || version=""
   if [ -z "$version" ]; then
     billion_context_preparation_failed "could not read the latest billion-context release"
-    return 0
+    return 1
   fi
   tag="v$version"
   stamp="$tag $(sha256sum "$BILLION_CONTEXT_PATCH" | cut -d' ' -f1)"
@@ -485,12 +480,14 @@ resolve_billion_context_package() {
       "https://github.com/$BILLION_CONTEXT_REPO" "$staging" >&2; then
       rm -rf "$staging"
       billion_context_preparation_failed "could not clone billion-context $tag"
-      return 0
+      return 1
     fi
     if git -C "$staging" apply --reverse --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
       outcome="upstream"
     elif ! git -C "$staging" apply --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
-      outcome="conflict"
+      rm -rf "$staging"
+      billion_context_preparation_failed "the #4898 patch does not apply to billion-context $tag"
+      return 1
     elif git -C "$staging" apply "$BILLION_CONTEXT_PATCH" \
       && (cd "$staging" \
         && npm ci --no-audit --no-fund \
@@ -502,7 +499,7 @@ resolve_billion_context_package() {
     else
       rm -rf "$staging"
       billion_context_preparation_failed "could not build billion-context $tag with the #4898 patch"
-      return 0
+      return 1
     fi
     if [ "$outcome" = "built" ]; then
       checkout="$staging"
@@ -520,8 +517,8 @@ resolve_billion_context_package() {
       echo "==> billion-context $tag already contains #4898; the local patch can be dropped" >&2
       echo "npm:billion-context" ;;
     *)
-      echo "==> the #4898 patch does not apply to billion-context $tag; using npm:billion-context" >&2
-      echo "npm:billion-context" ;;
+      billion_context_preparation_failed "no patched build is cached for billion-context $tag"
+      return 1 ;;
   esac
 }
 
