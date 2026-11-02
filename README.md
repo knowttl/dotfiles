@@ -162,6 +162,20 @@ Do not install another automatic compaction extension alongside it.
 Original context and summaries persist locally under `~/.local/share/billion-context/sessions/`; treat that directory as sensitive session data.
 Restart Pi after installing or updating the extension.
 
+#### Patched build
+
+Billion Context releases up to 0.1.212 can corrupt signed thinking blocks after a fold, so Anthropic then rejects every request with a 400 "thinking blocks in the latest assistant message cannot be modified" ([issue #4885](https://github.com/ranxianglei/billion-context/issues/4885)).
+The fix is in the unmerged [PR #4898](https://github.com/ranxianglei/billion-context/pull/4898), so `install.sh` carries it as `patches/billion-context-4898.patch`.
+On Linux the installer clones the latest release into a staging directory under `${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/billion-context`, applies the patch, builds it, and installs that checkout as a local Pi package instead of `npm:billion-context`.
+Release lookup uses the public npm registry and does not require GitHub authentication.
+If the release already contains the fix, the installer uses `npm:billion-context` and says so.
+If release lookup, cloning, patching, or building fails, the installer stops without changing the existing billion-context installation.
+Builds use separate staging directories, so preparation and failure cleanup leave the installed checkout untouched.
+The result is cached per release tag and patch content, so repeat runs skip the clone and build.
+The installer rewrites the `packages` list in `home/.pi/agent/settings.json` to match, which leaves that tracked file modified.
+Once an upstream release contains #4898, remove the vendored patch and the local-build machinery in `install.sh`, restore `npm:billion-context` in `PI_PACKAGES`, and retain source pruning so existing local installations migrate back to npm.
+Restart Pi sessions afterwards, and start new sessions for conversations that already hit the 400, because folds saved earlier stay broken.
+
 ### Neovim toolchain
 
 The Neovim config is based on kickstart.nvim and keeps **Mason** to manage LSP

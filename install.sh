@@ -418,25 +418,128 @@ npx --yes skills add kunchenguid/axi \
   --global --agent claude-code --yes
 
 echo "==> installing/updating Pi packages"
+
+# Keep signed thinking blocks intact after folds; see README.md, "Patched build",
+# for the upstream fix, installation behavior, and removal guidance.
+BILLION_CONTEXT_REPO="ranxianglei/billion-context"
+BILLION_CONTEXT_PATCH="$DIR/patches/billion-context-4898.patch"
+BILLION_CONTEXT_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/billion-context"
+
+BILLION_CONTEXT_EXISTING="$(node - "$HOME/.pi/agent/settings.json" <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const settingsPath = process.argv[2];
+const settings = fs.existsSync(settingsPath) ? JSON.parse(fs.readFileSync(settingsPath, 'utf8')) : {};
+for (const entry of settings.packages ?? []) {
+  const source = typeof entry === 'string' ? entry : entry.source;
+  if (source.startsWith('npm:') || source.startsWith('git:')) continue;
+  const checkout = path.resolve(path.dirname(settingsPath), source);
+  const manifest = path.join(checkout, 'package.json');
+  if (fs.existsSync(manifest) &&
+      JSON.parse(fs.readFileSync(manifest, 'utf8')).name === 'billion-context' &&
+      fs.existsSync(path.join(checkout, 'dist/agent/pi-native.js'))) {
+    console.log(checkout);
+    break;
+  }
+}
+NODE
+)"
+
+billion_context_preparation_failed() {
+  echo "==> ERROR: $1; leaving existing billion-context installation unchanged" >&2
+  return 1
+}
+
+# Prints the patched checkout, or npm:billion-context if upstream has the fix.
+# Reuses the outcome when the release tag and patch content are unchanged.
+resolve_billion_context_package() {
+  local version tag stamp checkout staging outcome
+  version="$(npm view billion-context version)" || version=""
+  if [ -z "$version" ]; then
+    billion_context_preparation_failed "could not read the latest billion-context release"
+    return 1
+  fi
+  tag="v$version"
+  stamp="$tag $(sha256sum "$BILLION_CONTEXT_PATCH" | cut -d' ' -f1)"
+  checkout="$(sed -n 3p "$BILLION_CONTEXT_CACHE/outcome" 2>/dev/null)"
+
+  if [ "$(sed -n 1p "$BILLION_CONTEXT_CACHE/outcome" 2>/dev/null)" != "$stamp" ] \
+    || { [ "$(sed -n 2p "$BILLION_CONTEXT_CACHE/outcome" 2>/dev/null)" = "built" ] \
+      && [ ! -f "$checkout/dist/agent/pi-native.js" ]; }; then
+    echo "==> preparing billion-context $tag with the #4898 patch" >&2
+    mkdir -p "$BILLION_CONTEXT_CACHE"
+    staging="$(mktemp -d "$BILLION_CONTEXT_CACHE/$tag.XXXXXX")"
+    if ! git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$tag" \
+      "https://github.com/$BILLION_CONTEXT_REPO" "$staging" >&2; then
+      rm -rf "$staging"
+      billion_context_preparation_failed "could not clone billion-context $tag"
+      return 1
+    fi
+    if git -C "$staging" apply --reverse --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
+      outcome="upstream"
+    elif ! git -C "$staging" apply --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
+      rm -rf "$staging"
+      billion_context_preparation_failed "the #4898 patch does not apply to billion-context $tag"
+      return 1
+    elif git -C "$staging" apply "$BILLION_CONTEXT_PATCH" \
+      && (cd "$staging" \
+        && npm ci --no-audit --no-fund \
+        && npm --prefix kernel ci --no-audit --no-fund \
+        && npm --prefix pi-subagents ci --no-audit --no-fund \
+        && npm run build \
+        && [ -f dist/agent/pi-native.js ]) >&2; then
+      outcome="built"
+    else
+      rm -rf "$staging"
+      billion_context_preparation_failed "could not build billion-context $tag with the #4898 patch"
+      return 1
+    fi
+    if [ "$outcome" = "built" ]; then
+      checkout="$staging"
+    else
+      rm -rf "$staging"
+      checkout=""
+    fi
+    printf '%s\n%s\n%s\n' "$stamp" "$outcome" "$checkout" > "$BILLION_CONTEXT_CACHE/outcome"
+  fi
+
+  case "$(sed -n 2p "$BILLION_CONTEXT_CACHE/outcome")" in
+    built)
+      echo "$checkout" ;;
+    upstream)
+      echo "==> billion-context $tag already contains #4898; the local patch can be dropped" >&2
+      echo "npm:billion-context" ;;
+    *)
+      billion_context_preparation_failed "no patched build is cached for billion-context $tag"
+      return 1 ;;
+  esac
+}
+
+BILLION_CONTEXT_PACKAGE="$(resolve_billion_context_package)"
+echo "==> billion-context source: $BILLION_CONTEXT_PACKAGE"
+
 PI_PACKAGES=(
   npm:pi-subagents
   npm:pi-background-tasks
   npm:pi-web-access
   npm:pi-stop
-  npm:billion-context
+  "$BILLION_CONTEXT_PACKAGE"
   npm:pi-antigravity
   npm:@juanibiapina/pi-extension-settings
 )
 
-for package in "${PI_PACKAGES[@]}"; do
-  pi install "$package"
-done
-pi update --extensions
+if [ "$BILLION_CONTEXT_PACKAGE" != "$BILLION_CONTEXT_EXISTING" ]; then
+  pi install "$BILLION_CONTEXT_PACKAGE"
+fi
 
+# Pi lists a local package by its path relative to ~/.pi/agent, but `pi remove`
+# only matches the absolute path, so resolve it first. Whichever billion-context
+# source is not in PI_PACKAGES is unmanaged here, so the pruning below removes
+# it and Pi never loads both.
 is_managed_pi_package() {
-  local package
-  for package in "${PI_PACKAGES[@]}"; do
-    [[ "$package" == "$1" ]] && return 0
+  local managed
+  for managed in "${PI_PACKAGES[@]}"; do
+    [[ "$managed" == "$1" ]] && return 0
   done
   return 1
 }
@@ -446,6 +549,10 @@ is_managed_pi_package() {
 # deletes an on-disk package missing from settings, but then exits 1.
 while read -r package; do
   [[ -z "$package" ]] && continue
+  case "$package" in
+    npm:*|git:*) ;;
+    *) package="$(cd "$HOME/.pi/agent" && realpath -m -- "$package")" ;;
+  esac
   if ! is_managed_pi_package "$package"; then
     echo "==> removing unmanaged Pi package $package"
     pi remove "$package" || true
@@ -462,6 +569,12 @@ done < <(
       | sed "s|^$HOME/.pi/agent/git/|git:|"
   } | sort -u
 )
+
+for package in "${PI_PACKAGES[@]}"; do
+  [[ "$package" == "$BILLION_CONTEXT_PACKAGE" ]] && continue
+  pi install "$package"
+done
+pi update --extensions
 
 # Apply Pi defaults after package installation and updates.
 node - "$HOME/.pi/agent/settings.json" <<'NODE'
