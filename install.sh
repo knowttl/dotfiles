@@ -418,12 +418,85 @@ npx --yes skills add kunchenguid/axi \
   --global --agent claude-code --yes
 
 echo "==> installing/updating Pi packages"
+
+# billion-context releases up to 0.1.212 can corrupt the signed thinking blocks
+# of Anthropic conversations after a fold, so every later request fails with a
+# 400 "thinking blocks ... cannot be modified" (upstream issue #4885, fix in
+# unmerged PR #4898). patches/billion-context-4898.patch carries that fix, so
+# build the latest release with it applied and install the checkout as a local
+# Pi package instead of npm:billion-context. Drop this block, the patch, and
+# the README note once an upstream release contains #4898.
+BILLION_CONTEXT_REPO="ranxianglei/billion-context"
+BILLION_CONTEXT_PATCH="$DIR/patches/billion-context-4898.patch"
+BILLION_CONTEXT_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/billion-context"
+
+# Prints the source Pi should load for billion-context: the patched checkout,
+# or npm:billion-context when upstream already has the fix or the patch no
+# longer applies. The outcome is cached per release tag and patch content, so
+# repeat runs neither clone nor rebuild.
+resolve_billion_context_package() {
+  local tag stamp checkout="$BILLION_CONTEXT_CACHE/checkout" outcome
+  tag="$(gh release view -R "$BILLION_CONTEXT_REPO" --json tagName -q .tagName)" || tag=""
+  if [ -z "$tag" ]; then
+    echo "==> could not read the latest billion-context release; using npm:billion-context" >&2
+    echo "npm:billion-context"
+    return 0
+  fi
+  stamp="$tag $(sha256sum "$BILLION_CONTEXT_PATCH" | cut -d' ' -f1)"
+
+  if [ "$(sed -n 1p "$BILLION_CONTEXT_CACHE/outcome" 2>/dev/null)" != "$stamp" ]; then
+    echo "==> preparing billion-context $tag with the #4898 patch" >&2
+    rm -rf "$BILLION_CONTEXT_CACHE"
+    mkdir -p "$BILLION_CONTEXT_CACHE"
+    if ! git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$tag" \
+      "https://github.com/$BILLION_CONTEXT_REPO" "$checkout" >&2; then
+      echo "==> could not clone billion-context $tag; using npm:billion-context" >&2
+      echo "npm:billion-context"
+      return 0
+    fi
+    if git -C "$checkout" apply --reverse --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
+      outcome="upstream"
+    elif ! git -C "$checkout" apply --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
+      outcome="conflict"
+    elif git -C "$checkout" apply "$BILLION_CONTEXT_PATCH" \
+      && (cd "$checkout" \
+        && npm ci --no-audit --no-fund \
+        && npm --prefix kernel ci --no-audit --no-fund \
+        && npm --prefix pi-subagents ci --no-audit --no-fund \
+        && npm run build \
+        && [ -f dist/agent/pi-native.js ]) >&2; then
+      outcome="built"
+    else
+      echo "==> could not build billion-context $tag with the #4898 patch; using npm:billion-context" >&2
+      rm -rf "$BILLION_CONTEXT_CACHE"
+      echo "npm:billion-context"
+      return 0
+    fi
+    [ "$outcome" = "built" ] || rm -rf "$checkout"
+    printf '%s\n%s\n' "$stamp" "$outcome" > "$BILLION_CONTEXT_CACHE/outcome"
+  fi
+
+  case "$(sed -n 2p "$BILLION_CONTEXT_CACHE/outcome")" in
+    built)
+      echo "$checkout" ;;
+    upstream)
+      echo "==> billion-context $tag already contains #4898; the local patch can be dropped" >&2
+      echo "npm:billion-context" ;;
+    *)
+      echo "==> the #4898 patch does not apply to billion-context $tag; using npm:billion-context" >&2
+      echo "npm:billion-context" ;;
+  esac
+}
+
+BILLION_CONTEXT_PACKAGE="$(resolve_billion_context_package)"
+echo "==> billion-context source: $BILLION_CONTEXT_PACKAGE"
+
 PI_PACKAGES=(
   npm:pi-subagents
   npm:pi-background-tasks
   npm:pi-web-access
   npm:pi-stop
-  npm:billion-context
+  "$BILLION_CONTEXT_PACKAGE"
   npm:pi-antigravity
   npm:@juanibiapina/pi-extension-settings
 )
@@ -433,10 +506,14 @@ for package in "${PI_PACKAGES[@]}"; do
 done
 pi update --extensions
 
+# Pi lists a local package by its path relative to ~/.pi/agent, but `pi remove`
+# only matches the absolute path, so resolve it first. Whichever billion-context
+# source is not in PI_PACKAGES is unmanaged here, so the pruning below removes
+# it and Pi never loads both.
 is_managed_pi_package() {
-  local package
-  for package in "${PI_PACKAGES[@]}"; do
-    [[ "$package" == "$1" ]] && return 0
+  local managed
+  for managed in "${PI_PACKAGES[@]}"; do
+    [[ "$managed" == "$1" ]] && return 0
   done
   return 1
 }
@@ -446,6 +523,10 @@ is_managed_pi_package() {
 # deletes an on-disk package missing from settings, but then exits 1.
 while read -r package; do
   [[ -z "$package" ]] && continue
+  case "$package" in
+    npm:*|git:*) ;;
+    *) package="$(cd "$HOME/.pi/agent" && realpath -m -- "$package")" ;;
+  esac
   if ! is_managed_pi_package "$package"; then
     echo "==> removing unmanaged Pi package $package"
     pi remove "$package" || true
