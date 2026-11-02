@@ -501,10 +501,7 @@ PI_PACKAGES=(
   npm:@juanibiapina/pi-extension-settings
 )
 
-for package in "${PI_PACKAGES[@]}"; do
-  pi install "$package"
-done
-pi update --extensions
+pi install "$BILLION_CONTEXT_PACKAGE"
 
 # Pi lists a local package by its path relative to ~/.pi/agent, but `pi remove`
 # only matches the absolute path, so resolve it first. Whichever billion-context
@@ -543,6 +540,12 @@ done < <(
       | sed "s|^$HOME/.pi/agent/git/|git:|"
   } | sort -u
 )
+
+for package in "${PI_PACKAGES[@]}"; do
+  [[ "$package" == "$BILLION_CONTEXT_PACKAGE" ]] && continue
+  pi install "$package"
+done
+pi update --extensions
 
 # Apply Pi defaults after package installation and updates.
 node - "$HOME/.pi/agent/settings.json" <<'NODE'
