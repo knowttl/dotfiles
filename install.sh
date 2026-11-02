@@ -434,32 +434,65 @@ BILLION_CONTEXT_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/billion-context"
 # or npm:billion-context when upstream already has the fix or the patch no
 # longer applies. The outcome is cached per release tag and patch content, so
 # repeat runs neither clone nor rebuild.
-resolve_billion_context_package() {
-  local tag stamp checkout="$BILLION_CONTEXT_CACHE/checkout" outcome
-  tag="$(gh release view -R "$BILLION_CONTEXT_REPO" --json tagName -q .tagName)" || tag=""
-  if [ -z "$tag" ]; then
-    echo "==> could not read the latest billion-context release; using npm:billion-context" >&2
+BILLION_CONTEXT_EXISTING="$(node - "$HOME/.pi/agent/settings.json" <<'NODE'
+const fs = require('node:fs');
+const path = require('node:path');
+const settingsPath = process.argv[2];
+const settings = fs.existsSync(settingsPath) ? JSON.parse(fs.readFileSync(settingsPath, 'utf8')) : {};
+for (const entry of settings.packages ?? []) {
+  const source = typeof entry === 'string' ? entry : entry.source;
+  if (source.startsWith('npm:') || source.startsWith('git:')) continue;
+  const checkout = path.resolve(path.dirname(settingsPath), source);
+  const manifest = path.join(checkout, 'package.json');
+  if (fs.existsSync(manifest) &&
+      JSON.parse(fs.readFileSync(manifest, 'utf8')).name === 'billion-context' &&
+      fs.existsSync(path.join(checkout, 'dist/agent/pi-native.js'))) {
+    console.log(checkout);
+    break;
+  }
+}
+NODE
+)"
+
+billion_context_preparation_failed() {
+  if [ -n "$BILLION_CONTEXT_EXISTING" ]; then
+    echo "==> WARNING: $1; keeping existing billion-context at $BILLION_CONTEXT_EXISTING" >&2
+    echo "$BILLION_CONTEXT_EXISTING"
+  else
+    echo "==> WARNING: $1; no working local installation found, using npm:billion-context WITHOUT the #4898 fix" >&2
     echo "npm:billion-context"
+  fi
+}
+
+resolve_billion_context_package() {
+  local version tag stamp checkout staging outcome
+  version="$(npm view billion-context version)" || version=""
+  if [ -z "$version" ]; then
+    billion_context_preparation_failed "could not read the latest billion-context release"
     return 0
   fi
+  tag="v$version"
   stamp="$tag $(sha256sum "$BILLION_CONTEXT_PATCH" | cut -d' ' -f1)"
+  checkout="$(sed -n 3p "$BILLION_CONTEXT_CACHE/outcome" 2>/dev/null)"
 
-  if [ "$(sed -n 1p "$BILLION_CONTEXT_CACHE/outcome" 2>/dev/null)" != "$stamp" ]; then
+  if [ "$(sed -n 1p "$BILLION_CONTEXT_CACHE/outcome" 2>/dev/null)" != "$stamp" ] \
+    || { [ "$(sed -n 2p "$BILLION_CONTEXT_CACHE/outcome" 2>/dev/null)" = "built" ] \
+      && [ ! -f "$checkout/dist/agent/pi-native.js" ]; }; then
     echo "==> preparing billion-context $tag with the #4898 patch" >&2
-    rm -rf "$BILLION_CONTEXT_CACHE"
     mkdir -p "$BILLION_CONTEXT_CACHE"
+    staging="$(mktemp -d "$BILLION_CONTEXT_CACHE/$tag.XXXXXX")"
     if ! git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$tag" \
-      "https://github.com/$BILLION_CONTEXT_REPO" "$checkout" >&2; then
-      echo "==> could not clone billion-context $tag; using npm:billion-context" >&2
-      echo "npm:billion-context"
+      "https://github.com/$BILLION_CONTEXT_REPO" "$staging" >&2; then
+      rm -rf "$staging"
+      billion_context_preparation_failed "could not clone billion-context $tag"
       return 0
     fi
-    if git -C "$checkout" apply --reverse --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
+    if git -C "$staging" apply --reverse --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
       outcome="upstream"
-    elif ! git -C "$checkout" apply --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
+    elif ! git -C "$staging" apply --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
       outcome="conflict"
-    elif git -C "$checkout" apply "$BILLION_CONTEXT_PATCH" \
-      && (cd "$checkout" \
+    elif git -C "$staging" apply "$BILLION_CONTEXT_PATCH" \
+      && (cd "$staging" \
         && npm ci --no-audit --no-fund \
         && npm --prefix kernel ci --no-audit --no-fund \
         && npm --prefix pi-subagents ci --no-audit --no-fund \
@@ -467,13 +500,17 @@ resolve_billion_context_package() {
         && [ -f dist/agent/pi-native.js ]) >&2; then
       outcome="built"
     else
-      echo "==> could not build billion-context $tag with the #4898 patch; using npm:billion-context" >&2
-      rm -rf "$BILLION_CONTEXT_CACHE"
-      echo "npm:billion-context"
+      rm -rf "$staging"
+      billion_context_preparation_failed "could not build billion-context $tag with the #4898 patch"
       return 0
     fi
-    [ "$outcome" = "built" ] || rm -rf "$checkout"
-    printf '%s\n%s\n' "$stamp" "$outcome" > "$BILLION_CONTEXT_CACHE/outcome"
+    if [ "$outcome" = "built" ]; then
+      checkout="$staging"
+    else
+      rm -rf "$staging"
+      checkout=""
+    fi
+    printf '%s\n%s\n%s\n' "$stamp" "$outcome" "$checkout" > "$BILLION_CONTEXT_CACHE/outcome"
   fi
 
   case "$(sed -n 2p "$BILLION_CONTEXT_CACHE/outcome")" in
@@ -501,7 +538,9 @@ PI_PACKAGES=(
   npm:@juanibiapina/pi-extension-settings
 )
 
-pi install "$BILLION_CONTEXT_PACKAGE"
+if [ "$BILLION_CONTEXT_PACKAGE" != "$BILLION_CONTEXT_EXISTING" ]; then
+  pi install "$BILLION_CONTEXT_PACKAGE"
+fi
 
 # Pi lists a local package by its path relative to ~/.pi/agent, but `pi remove`
 # only matches the absolute path, so resolve it first. Whichever billion-context

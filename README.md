@@ -167,7 +167,11 @@ Restart Pi after installing or updating the extension.
 Billion Context releases up to 0.1.212 can corrupt signed thinking blocks after a fold, so Anthropic then rejects every request with a 400 "thinking blocks in the latest assistant message cannot be modified" ([issue #4885](https://github.com/ranxianglei/billion-context/issues/4885)).
 The fix is in the unmerged [PR #4898](https://github.com/ranxianglei/billion-context/pull/4898), so `install.sh` carries it as `patches/billion-context-4898.patch`.
 On Linux the installer clones the latest release into `~/.cache/dotfiles/billion-context`, applies the patch, builds it, and installs that checkout as a local Pi package instead of `npm:billion-context`.
-If the release already contains the fix, or the patch no longer applies or builds, the installer uses `npm:billion-context` and says so.
+Release lookup uses the public npm registry and does not require GitHub authentication.
+If the release already contains the fix, or the patch no longer applies, the installer uses `npm:billion-context` and says so.
+If release lookup, cloning, or building fails, the installer warns and retains any registered working local billion-context installation.
+Without a working local installation, it warns that it is falling back to `npm:billion-context` without the fix.
+Builds use separate staging directories, so preparation and failure cleanup leave the installed checkout untouched.
 The result is cached per release tag and patch content, so repeat runs skip the clone and build.
 The installer rewrites the `packages` list in `home/.pi/agent/settings.json` to match, which leaves that tracked file modified.
 Once an upstream release contains #4898, delete the patch and the `resolve_billion_context_package` block in `install.sh`.
