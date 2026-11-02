@@ -419,21 +419,12 @@ npx --yes skills add kunchenguid/axi \
 
 echo "==> installing/updating Pi packages"
 
-# billion-context releases up to 0.1.212 can corrupt the signed thinking blocks
-# of Anthropic conversations after a fold, so every later request fails with a
-# 400 "thinking blocks ... cannot be modified" (upstream issue #4885, fix in
-# unmerged PR #4898). patches/billion-context-4898.patch carries that fix, so
-# build the latest release with it applied and install the checkout as a local
-# Pi package instead of npm:billion-context. Drop this block, the patch, and
-# the README note once an upstream release contains #4898.
+# Keep signed thinking blocks intact after folds; see README.md, "Patched build",
+# for the upstream fix, installation behavior, and removal guidance.
 BILLION_CONTEXT_REPO="ranxianglei/billion-context"
 BILLION_CONTEXT_PATCH="$DIR/patches/billion-context-4898.patch"
 BILLION_CONTEXT_CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/billion-context"
 
-# Prints the source Pi should load for billion-context: the patched checkout,
-# or npm:billion-context when upstream already has the fix.
-# The outcome is cached per release tag and patch content, so
-# repeat runs neither clone nor rebuild.
 BILLION_CONTEXT_EXISTING="$(node - "$HOME/.pi/agent/settings.json" <<'NODE'
 const fs = require('node:fs');
 const path = require('node:path');
@@ -459,6 +450,8 @@ billion_context_preparation_failed() {
   return 1
 }
 
+# Prints the patched checkout, or npm:billion-context if upstream has the fix.
+# Reuses the outcome when the release tag and patch content are unchanged.
 resolve_billion_context_package() {
   local version tag stamp checkout staging outcome
   version="$(npm view billion-context version)" || version=""
