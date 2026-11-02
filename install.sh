@@ -375,10 +375,19 @@ else
   } | INSTALLER_GITHUB_TOKEN="$installer_github_token" sh
 fi
 echo "==> installing/updating treehouse"
-{
-  emit_authenticated_github_curl
-  curl -fsSL https://kunchenguid.github.io/treehouse/install.sh
-} | INSTALLER_GITHUB_TOKEN="$installer_github_token" sh
+if [ "$(uname -s)" != "Linux" ] || grep -qw avx2 /proc/cpuinfo; then
+  {
+    emit_authenticated_github_curl
+    curl -fsSL https://kunchenguid.github.io/treehouse/install.sh
+  } | INSTALLER_GITHUB_TOKEN="$installer_github_token" sh
+else
+  # On CPUs without AVX2 (e.g. a VM with a generic QEMU CPU) the official
+  # linux-amd64 binary since v3.1.7 crashes with "illegal instruction"
+  # (kunchenguid/treehouse#203), so build the same release from source without cgo.
+  treehouse_tag="$(gh release view -R kunchenguid/treehouse --json tagName -q .tagName)"
+  CGO_ENABLED=0 GOAMD64=v1 GOBIN="$HOME/.local/bin" \
+    go install "github.com/kunchenguid/treehouse/v3@${treehouse_tag}"
+fi
 unset installer_github_token
 unset -f emit_authenticated_github_curl
 echo "==> installing/updating gh-axi"
