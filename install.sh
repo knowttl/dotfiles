@@ -445,19 +445,27 @@ for (const entry of settings.packages ?? []) {
 NODE
 )"
 
+# A transient preparation failure must never abort install.sh. Keep a working
+# existing installation untouched; on a fresh host fall back to the npm release.
 billion_context_preparation_failed() {
-  echo "==> ERROR: $1; leaving existing billion-context installation unchanged" >&2
-  return 1
+  if [ -n "$BILLION_CONTEXT_EXISTING" ]; then
+    echo "==> WARNING: $1; keeping the existing billion-context installation" >&2
+    echo "$BILLION_CONTEXT_EXISTING"
+  else
+    echo "==> WARNING: $1; falling back to npm:billion-context without the #4898 patch" >&2
+    echo "npm:billion-context"
+  fi
 }
 
-# Prints the patched checkout, or npm:billion-context if upstream has the fix.
+# Prints the patched checkout, or npm:billion-context if upstream has the fix
+# or the patch cannot be used. Always succeeds.
 # Reuses the outcome when the release tag and patch content are unchanged.
 resolve_billion_context_package() {
   local version tag stamp checkout staging outcome
   version="$(npm view billion-context version)" || version=""
   if [ -z "$version" ]; then
     billion_context_preparation_failed "could not read the latest billion-context release"
-    return 1
+    return 0
   fi
   tag="v$version"
   stamp="$tag $(sha256sum "$BILLION_CONTEXT_PATCH" | cut -d' ' -f1)"
@@ -467,20 +475,24 @@ resolve_billion_context_package() {
     || { [ "$(sed -n 2p "$BILLION_CONTEXT_CACHE/outcome" 2>/dev/null)" = "built" ] \
       && [ ! -f "$checkout/dist/agent/pi-native.js" ]; }; then
     echo "==> preparing billion-context $tag with the #4898 patch" >&2
-    mkdir -p "$BILLION_CONTEXT_CACHE"
-    staging="$(mktemp -d "$BILLION_CONTEXT_CACHE/$tag.XXXXXX")"
+    if ! { mkdir -p "$BILLION_CONTEXT_CACHE" \
+      && staging="$(mktemp -d "$BILLION_CONTEXT_CACHE/$tag.XXXXXX")"; }; then
+      billion_context_preparation_failed "could not create a staging directory for billion-context $tag"
+      return 0
+    fi
     if ! git -c advice.detachedHead=false clone --quiet --depth 1 --branch "$tag" \
       "https://github.com/$BILLION_CONTEXT_REPO" "$staging" >&2; then
       rm -rf "$staging"
       billion_context_preparation_failed "could not clone billion-context $tag"
-      return 1
+      return 0
     fi
     if git -C "$staging" apply --reverse --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
       outcome="upstream"
     elif ! git -C "$staging" apply --check "$BILLION_CONTEXT_PATCH" 2>/dev/null; then
       rm -rf "$staging"
-      billion_context_preparation_failed "the #4898 patch does not apply to billion-context $tag"
-      return 1
+      echo "==> WARNING: the #4898 patch does not apply to billion-context $tag; falling back to npm:billion-context without it" >&2
+      echo "npm:billion-context"
+      return 0
     elif git -C "$staging" apply "$BILLION_CONTEXT_PATCH" \
       && (cd "$staging" \
         && npm ci --no-audit --no-fund \
@@ -492,7 +504,7 @@ resolve_billion_context_package() {
     else
       rm -rf "$staging"
       billion_context_preparation_failed "could not build billion-context $tag with the #4898 patch"
-      return 1
+      return 0
     fi
     if [ "$outcome" = "built" ]; then
       checkout="$staging"
@@ -510,8 +522,7 @@ resolve_billion_context_package() {
       echo "==> billion-context $tag already contains #4898; the local patch can be dropped" >&2
       echo "npm:billion-context" ;;
     *)
-      billion_context_preparation_failed "no patched build is cached for billion-context $tag"
-      return 1 ;;
+      billion_context_preparation_failed "no patched build is cached for billion-context $tag" ;;
   esac
 }
 

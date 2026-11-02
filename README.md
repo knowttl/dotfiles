@@ -169,7 +169,9 @@ The fix is in the unmerged [PR #4898](https://github.com/ranxianglei/billion-con
 On Linux the installer clones the latest release into a staging directory under `${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles/billion-context`, applies the patch, builds it, and installs that checkout as a local Pi package instead of `npm:billion-context`.
 Release lookup uses the public npm registry and does not require GitHub authentication.
 If the release already contains the fix, the installer uses `npm:billion-context` and says so.
-If release lookup, cloning, patching, or building fails, the installer stops without changing the existing billion-context installation.
+If the patch does not apply to the latest release, the installer warns and installs `npm:billion-context` instead.
+If release lookup, cloning, or building fails, the installer warns and keeps an existing local billion-context installation unchanged, or falls back to `npm:billion-context` on a fresh host.
+A preparation failure never aborts the rest of `install.sh`.
 Builds use separate staging directories, so preparation and failure cleanup leave the installed checkout untouched.
 The result is cached per release tag and patch content, so repeat runs skip the clone and build.
 The installer rewrites the `packages` list in `home/.pi/agent/settings.json` to match, which leaves that tracked file modified.
