@@ -36,7 +36,7 @@
 - Split a function only when the piece stands on its own.
   A reader should follow one concept without bouncing between files.
 - Use try/catch only for a real failure you can handle meaningfully.
-- Comments only for rationale, constraints, warnings, or contracts.
+- No comments in code. Only tool directives, license or SPDX headers, and shebangs are allowed; put rationale in commit messages, PR descriptions, or docs instead.
 
 ### 6. Prefer Deep Modules
 
