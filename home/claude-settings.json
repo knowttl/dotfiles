@@ -11,6 +11,11 @@
     "defaultMode": "bypassPermissions"
   },
   "skipDangerousModePermissionPrompt": true,
+  "disableBundledSkills": true,
+  "disableWorkflows": true,
+  "disableRemoteControl": true,
+  "disableClaudeAiConnectors": true,
+  "enableArtifact": false,
   "statusLine": {
     "type": "command",
     "command": "zsh ~/.claude/statusline-command.sh"
