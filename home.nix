@@ -120,7 +120,7 @@ in
       done
 
       # Load nvm so npm-global CLIs installed under nvm's node
-      # (gh-axi, atelier-axi, ...) are on PATH in interactive shells.
+      # (gh-axi, ...) are on PATH in interactive shells.
       export NVM_DIR="$HOME/.nvm"
       [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"
 
