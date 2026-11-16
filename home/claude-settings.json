@@ -1,7 +1,8 @@
 {
   "env": {
     "CLAUDE_CODE_SUBAGENT_MODEL": "claude-sonnet-5-5",
-    "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1"
+    "CLAUDE_CODE_SUBAGENT_MODEL_FORCE": "1",
+    "CLAUDE_CODE_EXPERIMENTAL_CODE_MODE": "1"
   },
   "attribution": {
     "commit": "",
