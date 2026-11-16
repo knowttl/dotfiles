@@ -11,6 +11,7 @@
   "permissions": {
     "defaultMode": "bypassPermissions"
   },
+  "autoMemoryEnabled": false,
   "skipDangerousModePermissionPrompt": true,
   "statusLine": {
     "type": "command",
